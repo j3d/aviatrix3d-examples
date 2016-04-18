@@ -17,32 +17,16 @@ import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.*;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.FileInputStream;
-import java.io.BufferedInputStream;
-
-import javax.imageio.ImageIO;
+import j3d.aviatrix3d.examples.basic.BaseDemoFrame;
 import org.j3d.maths.vector.Matrix4d;
 import org.j3d.maths.vector.Vector3d;
 
 // Local imports
 import org.j3d.aviatrix3d.*;
 
-import org.j3d.aviatrix3d.output.graphics.DebugAWTSurface;
-import org.j3d.aviatrix3d.pipeline.graphics.GraphicsCullStage;
-import org.j3d.aviatrix3d.pipeline.graphics.DefaultGraphicsPipeline;
-import org.j3d.aviatrix3d.pipeline.graphics.GraphicsOutputDevice;
-import org.j3d.aviatrix3d.pipeline.graphics.NullCullStage;
-import org.j3d.aviatrix3d.pipeline.graphics.NullSortStage;
-import org.j3d.aviatrix3d.pipeline.graphics.GraphicsSortStage;
-import org.j3d.aviatrix3d.management.SingleThreadRenderManager;
-import org.j3d.aviatrix3d.management.SingleDisplayCollection;
-
 import org.j3d.geom.GeometryData;
 import org.j3d.geom.terrain.ElevationGridGenerator;
 import org.j3d.texture.procedural.TextureGenerator;
-import org.j3d.util.DataUtils;
 import org.j3d.util.MatrixUtils;
 
 /**
@@ -53,11 +37,10 @@ import org.j3d.util.MatrixUtils;
  * @author Justin Couch
  * @version $Revision: 1.9 $
  */
-public class DynamicTerrainDemo extends Frame
+public class DynamicTerrainDemo extends BaseDemoFrame
     implements ApplicationUpdateObserver,
                NodeUpdateListener,
-               ActionListener,
-               WindowListener
+               ActionListener
 {
     /** Names of the images to load from the local dir */
     private static final String[] IMAGE_FILES =
@@ -83,15 +66,6 @@ public class DynamicTerrainDemo extends Frame
 
     /** The height of the water level */
     private static final float WATER_HEIGHT = -5;
-
-    /** Manager for the scene graph handling */
-    private SingleThreadRenderManager sceneManager;
-
-    /** Manager for the layers etc */
-    private SingleDisplayCollection displayManager;
-
-    /** Our drawing surface */
-    private GraphicsOutputDevice surface;
 
     // bunch of text fields for the parameters
     private TextField scaleTf;
@@ -153,11 +127,9 @@ public class DynamicTerrainDemo extends Frame
      */
     public DynamicTerrainDemo()
     {
-        super("Aviatrix Procedural Terrain Demo");
+        super("Aviatrix Procedural Terrain Demo", false);
 
         setBackground(SystemColor.menu);
-        setLayout(new BorderLayout());
-        addWindowListener(this);
 
         newTerrainAvailable = false;
 
@@ -183,30 +155,130 @@ public class DynamicTerrainDemo extends Frame
 
         createParamsPanel();
 
-        setupAviatrix();
-        setupSceneGraph();
+        setSize(600, 400);
+    }
 
-        setSize(600, 600);
-        setLocation(40, 40);
+    @Override
+    protected void setupSceneGraph()
+    {
+        // View group
+        Viewpoint vp = new Viewpoint();
+        vp.setHeadlightEnabled(true);
 
-        // Need to set visible first before starting the rendering thread due
-        // to a bug in JOGL. See JOGL Issue #54 for more information on this.
-        // http://jogl.dev.java.net
-        setVisible(true);
+        // We could set these directly, but we don't because we'd like to
+        // pass the values through to the shaders as well. More convenient and
+        // we guarantee the same values then.
+        Vector3d trans = new Vector3d();
+        trans.set(0, 30, 70);
+
+        Matrix4d mat = new Matrix4d();
+
+        MatrixUtils mu = new MatrixUtils();
+        mu.rotateX(Math.PI / -8, mat);
+        mat.setTranslation(trans);
+
+        TransformGroup tx = new TransformGroup();
+        tx.addChild(vp);
+        tx.setTransform(mat);
+
+        Group scene_root = new Group();
+        scene_root.addChild(tx);
+
+        // Now the placeholder geom and texture for the terrain.
+        terrainGeometry = new TriangleStripArray();
+
+        terrainTexture =
+            new ByteTextureComponent2D(ByteTextureComponent2D.FORMAT_RGB,
+                                       TEXTURE_SIZE,
+                                       TEXTURE_SIZE,
+                                       new byte[TEXTURE_SIZE * TEXTURE_SIZE * 3]);
+
+        Texture2D tex = new Texture2D(Texture.FORMAT_RGB, terrainTexture);
+
+        TextureUnit[] textures = new TextureUnit[1];
+        textures[0] = new TextureUnit();
+        textures[0].setTexture(tex);
+
+        Material material = new Material();
+        material.setDiffuseColor(new float[] {1, 1, 0, 1 });
+
+        Appearance app = new Appearance();
+        app.setTextureUnits(textures, 1);
+        app.setMaterial(material);
+
+        Shape3D t_shape = new Shape3D();
+        t_shape.setGeometry(terrainGeometry);
+        t_shape.setAppearance(app);
+
+        Fog t_fog = new Fog();
+        t_fog.setGlobalOnly(false);
+        t_fog.setColor(new float[] { 0, 0, 1, 1});
+
+        Group t_group = new Group();
+        t_group.addChild(t_fog);
+        t_group.addChild(t_shape);
+        scene_root.addChild(t_group);
+
+        // Create another semi-transparent plane that is used to represent the
+        // water level at a height just above zero.
+        float[] coords =
+            {
+                -TERRAIN_SIZE / 2, WATER_HEIGHT,  TERRAIN_SIZE / 2,
+                TERRAIN_SIZE / 2, WATER_HEIGHT,  TERRAIN_SIZE / 2,
+                TERRAIN_SIZE / 2, WATER_HEIGHT, -TERRAIN_SIZE / 2,
+                -TERRAIN_SIZE / 2, WATER_HEIGHT, -TERRAIN_SIZE / 2,
+            };
+
+        QuadArray water_geom = new QuadArray();
+        water_geom.setVertices(VertexGeometry.COORDINATE_3, coords, 4);
+
+        material = new Material();
+        material.setDiffuseColor(new float[] {0, 0, 1, 0.5f });
+        material.setSpecularColor(new float[] {0, 0, 1, 0.5f });
+        material.setTransparency(0.5f);
+
+        app = new Appearance();
+        app.setMaterial(material);
+
+        Shape3D w_shape = new Shape3D();
+        w_shape.setGeometry(water_geom);
+        w_shape.setAppearance(app);
+        scene_root.addChild(w_shape);
+
+        fog = new Fog();
+        scene_root.addChild(fog);
+
+        SimpleScene scene = new SimpleScene();
+        scene.setRenderedGeometry(scene_root);
+        scene.setActiveView(vp);
+        scene.setActiveFog(fog);
+
+        sceneManager.setApplicationObserver(this);
+
+        // Then the basic layer and viewport at the top:
+        SimpleViewport view = new SimpleViewport();
+        view.setDimensions(0, 0, 500, 500);
+        view.setScene(scene);
+        resizeManager.addManagedViewport(view);
+
+        SimpleLayer layer = new SimpleLayer();
+        layer.setViewport(view);
+
+        Layer[] layers = { layer };
+        displayManager.setLayers(layers, 1);
     }
 
     //---------------------------------------------------------------
     // Methods defined by ApplicationUpdateObserver
     //---------------------------------------------------------------
 
-    /**
-     * Notification that now is a good time to update the scene graph. Use it
-     * to clock the particle system.
-     */
+    @Override
     public void updateSceneGraph()
     {
         if(!newTerrainAvailable)
             return;
+
+        resizeManager.sendResizeUpdates();
 
         terrainGeometry.boundsChanged(this);
         terrainGeometry.dataChanged(this);
@@ -217,12 +289,7 @@ public class DynamicTerrainDemo extends Frame
         newTerrainAvailable = false;
     }
 
-    /**
-     * Notification that the AV3D internal shutdown handler has detected a
-     * system-wide shutdown. The aviatrix code has already terminated rendering
-     * at the point this method is called, only the user's system code needs to
-     * terminate before exiting here.
-     */
+    @Override
     public void appShutdown()
     {
         // do nothing
@@ -232,12 +299,7 @@ public class DynamicTerrainDemo extends Frame
     // Methods required by the UpdateListener interface.
     //----------------------------------------------------------
 
-    /**
-     * Notification that its safe to update the node now with any operations
-     * that could potentially effect the node's bounds.
-     *
-     * @param src The node or Node Component that is to be updated.
-     */
+    @Override
     public void updateNodeBoundsChanges(Object src)
     {
         terrainGeometry.setVertices(VertexGeometry.COORDINATE_3,
@@ -247,12 +309,7 @@ public class DynamicTerrainDemo extends Frame
                                       geomData.numStrips);
     }
 
-    /**
-     * Notification that its safe to update the node now with any operations
-     * that only change the node's properties, but do not change the bounds.
-     *
-     * @param src The node or Node Component that is to be updated.
-     */
+    @Override
     public void updateNodeDataChanges(Object src)
     {
         if(src == terrainGeometry)
@@ -429,64 +486,6 @@ public class DynamicTerrainDemo extends Frame
     }
 
     //---------------------------------------------------------------
-    // Methods defined by WindowListener
-    //---------------------------------------------------------------
-
-    /**
-     * Ignored
-     */
-    public void windowActivated(WindowEvent evt)
-    {
-    }
-
-    /**
-     * Ignored
-     */
-    public void windowClosed(WindowEvent evt)
-    {
-    }
-
-    /**
-     * Exit the application
-     *
-     * @param evt The event that caused this method to be called.
-     */
-    public void windowClosing(WindowEvent evt)
-    {
-        sceneManager.shutdown();
-        System.exit(0);
-    }
-
-    /**
-     * Ignored
-     */
-    public void windowDeactivated(WindowEvent evt)
-    {
-    }
-
-    /**
-     * Ignored
-     */
-    public void windowDeiconified(WindowEvent evt)
-    {
-    }
-
-    /**
-     * Ignored
-     */
-    public void windowIconified(WindowEvent evt)
-    {
-    }
-
-    /**
-     * When the window is opened, start everything up.
-     */
-    public void windowOpened(WindowEvent evt)
-    {
-        sceneManager.setEnabled(true);
-    }
-
-    //---------------------------------------------------------------
     // Local methods
     //---------------------------------------------------------------
 
@@ -576,179 +575,6 @@ public class DynamicTerrainDemo extends Frame
 
         spacer.add(main_panel, BorderLayout.NORTH);
         add(spacer, BorderLayout.EAST);
-    }
-
-    /**
-     * Setup the avaiatrix pipeline here
-     */
-    private void setupAviatrix()
-    {
-        // Assemble a simple single-threaded pipeline.
-        GraphicsRenderingCapabilities caps = new GraphicsRenderingCapabilities();
-
-        GraphicsCullStage culler = new NullCullStage();
-        culler.setOffscreenCheckEnabled(false);
-
-        GraphicsSortStage sorter = new NullSortStage();
-        surface = new DebugAWTSurface(caps);
-        DefaultGraphicsPipeline pipeline = new DefaultGraphicsPipeline();
-
-        pipeline.setCuller(culler);
-        pipeline.setSorter(sorter);
-        pipeline.setGraphicsOutputDevice(surface);
-
-        displayManager = new SingleDisplayCollection();
-        displayManager.addPipeline(pipeline);
-
-        // Render manager
-        sceneManager = new SingleThreadRenderManager();
-        sceneManager.addDisplay(displayManager);
-        sceneManager.setMinimumFrameInterval(100);
-
-        // Before putting the pipeline into run mode, put the canvas on
-        // screen first.
-        Component comp = (Component)surface.getSurfaceObject();
-        add(comp, BorderLayout.CENTER);
-    }
-
-    /**
-     * Setup the basic scene which consists of a quad and a viewpoint
-     */
-    private void setupSceneGraph()
-    {
-        // View group
-        Viewpoint vp = new Viewpoint();
-        vp.setHeadlightEnabled(true);
-
-        // We could set these directly, but we don't because we'd like to
-        // pass the values through to the shaders as well. More convenient and
-        // we guarantee the same values then.
-        Vector3d trans = new Vector3d();
-        trans.set(0, 30, 70);
-
-        Matrix4d mat = new Matrix4d();
-
-        MatrixUtils mu = new MatrixUtils();
-        mu.rotateX(Math.PI / -8, mat);
-        mat.setTranslation(trans);
-
-        TransformGroup tx = new TransformGroup();
-        tx.addChild(vp);
-        tx.setTransform(mat);
-
-        Group scene_root = new Group();
-        scene_root.addChild(tx);
-
-        // Now the placeholder geom and texture for the terrain.
-        terrainGeometry = new TriangleStripArray();
-
-        terrainTexture =
-            new ByteTextureComponent2D(ByteTextureComponent2D.FORMAT_RGB,
-                                       TEXTURE_SIZE,
-                                       TEXTURE_SIZE,
-                                       new byte[TEXTURE_SIZE * TEXTURE_SIZE * 3]);
-
-        Texture2D tex = new Texture2D(Texture.FORMAT_RGB, terrainTexture);
-
-        TextureUnit[] textures = new TextureUnit[1];
-        textures[0] = new TextureUnit();
-        textures[0].setTexture(tex);
-
-        Material material = new Material();
-        material.setDiffuseColor(new float[] {1, 1, 0, 1 });
-
-        Appearance app = new Appearance();
-        app.setTextureUnits(textures, 1);
-        app.setMaterial(material);
-
-        Shape3D t_shape = new Shape3D();
-        t_shape.setGeometry(terrainGeometry);
-        t_shape.setAppearance(app);
-
-        Fog t_fog = new Fog();
-        t_fog.setGlobalOnly(false);
-        t_fog.setColor(new float[] { 0, 0, 1, 1});
-
-        Group t_group = new Group();
-        t_group.addChild(t_fog);
-        t_group.addChild(t_shape);
-        scene_root.addChild(t_group);
-
-        // Create another semi-transparent plane that is used to represent the
-        // water level at a height just above zero.
-        float[] coords =
-        {
-            -TERRAIN_SIZE / 2, WATER_HEIGHT,  TERRAIN_SIZE / 2,
-             TERRAIN_SIZE / 2, WATER_HEIGHT,  TERRAIN_SIZE / 2,
-             TERRAIN_SIZE / 2, WATER_HEIGHT, -TERRAIN_SIZE / 2,
-            -TERRAIN_SIZE / 2, WATER_HEIGHT, -TERRAIN_SIZE / 2,
-        };
-
-        QuadArray water_geom = new QuadArray();
-        water_geom.setVertices(VertexGeometry.COORDINATE_3, coords, 4);
-
-        material = new Material();
-        material.setDiffuseColor(new float[] {0, 0, 1, 0.5f });
-        material.setSpecularColor(new float[] {0, 0, 1, 0.5f });
-        material.setTransparency(0.5f);
-
-        app = new Appearance();
-        app.setMaterial(material);
-
-        Shape3D w_shape = new Shape3D();
-        w_shape.setGeometry(water_geom);
-        w_shape.setAppearance(app);
-        scene_root.addChild(w_shape);
-
-        fog = new Fog();
-        scene_root.addChild(fog);
-
-        SimpleScene scene = new SimpleScene();
-        scene.setRenderedGeometry(scene_root);
-        scene.setActiveView(vp);
-        scene.setActiveFog(fog);
-
-        sceneManager.setApplicationObserver(this);
-        // Then the basic layer and viewport at the top:
-        SimpleViewport view = new SimpleViewport();
-        view.setDimensions(0, 0, 500, 500);
-        view.setScene(scene);
-
-        SimpleLayer layer = new SimpleLayer();
-        layer.setViewport(view);
-
-        Layer[] layers = { layer };
-        displayManager.setLayers(layers, 1);
-    }
-
-    /**
-     * Load a single image.
-     */
-    private BufferedImage  loadImage(String name)
-    {
-        BufferedImage  ret_val = null;
-
-        try
-        {
-            File f = DataUtils.lookForFile(name, getClass(), null);
-
-            if(f == null)
-            {
-                System.out.println("Can't find texture source file");
-                return null;
-            }
-
-            FileInputStream is = new FileInputStream(f);
-
-            BufferedInputStream stream = new BufferedInputStream(is);
-            ret_val = ImageIO.read(stream);
-        }
-        catch(IOException ioe)
-        {
-            System.out.println("Error reading image: " + ioe);
-        }
-
-        return ret_val;
     }
 
     public static void main(String[] argv)
