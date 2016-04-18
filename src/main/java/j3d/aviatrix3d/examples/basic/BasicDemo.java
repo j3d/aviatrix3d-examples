@@ -17,7 +17,8 @@ import org.j3d.renderer.aviatrix3d.pipeline.ViewportResizeManager;
 
 /**
  * Example application that demonstrates how to put together a single-threaded
- * rendering system.
+ * rendering system. This does everything explicitly. Other demos will make use
+ * of convenience base classes to commonise most of the construction.
  *
  * @author Justin Couch
  * @version $Revision: 1.13 $

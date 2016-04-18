@@ -24,20 +24,11 @@ import org.j3d.aviatrix3d.management.SingleDisplayCollection;
  * @author Justin Couch
  * @version $Revision: 1.3 $
  */
-public class GraphicsCardInfoDemo extends Frame
-    implements WindowListener, SurfaceInfoListener
+public class GraphicsCardInfoDemo extends BaseDemoFrame
+    implements SurfaceInfoListener
 {
     /** App name to register preferences under */
     private static final String APP_NAME = "examples.GraphicsCardInfoDemo";
-
-    /** Manager for the scene graph handling */
-    private SingleThreadRenderManager sceneManager;
-
-    /** Manager for the layers etc */
-    private SingleDisplayCollection displayManager;
-
-    /** Our drawing surface */
-    private GraphicsOutputDevice surface;
 
     public GraphicsCardInfoDemo()
     {
@@ -45,20 +36,6 @@ public class GraphicsCardInfoDemo extends Frame
 
         I18nManager intl_mgr = I18nManager.getManager();
         intl_mgr.setApplication(APP_NAME, "config.i18n.org-j3d-aviatrix3d-resources-core");
-
-        setLayout(new BorderLayout());
-        addWindowListener(this);
-
-        setupAviatrix();
-        setupSceneGraph();
-
-        setSize(500, 500);
-        setLocation(40, 40);
-
-        // Need to set visible first before starting the rendering thread due
-        // to a bug in JOGL. See JOGL Issue #54 for more information on this.
-        // http://jogl.dev.java.net
-        setVisible(true);
     }
 
     //---------------------------------------------------------------
@@ -82,91 +59,11 @@ public class GraphicsCardInfoDemo extends Frame
         System.out.println("Max Color Atch:  " + info.getMaxColorAttachmentsCount());
     }
 
-    //---------------------------------------------------------------
-    // Methods defined by WindowListener
-    //---------------------------------------------------------------
-
     @Override
-    public void windowActivated(WindowEvent evt)
+    protected void setupSceneGraph()
     {
-    }
-
-    @Override
-    public void windowClosed(WindowEvent evt)
-    {
-    }
-
-    @Override
-    public void windowClosing(WindowEvent evt)
-    {
-        sceneManager.shutdown();
-        System.exit(0);
-    }
-
-    @Override
-    public void windowDeactivated(WindowEvent evt)
-    {
-    }
-
-    @Override
-    public void windowDeiconified(WindowEvent evt)
-    {
-    }
-
-    @Override
-    public void windowIconified(WindowEvent evt)
-    {
-    }
-
-    @Override
-    public void windowOpened(WindowEvent evt)
-    {
-        sceneManager.setEnabled(true);
-    }
-
-    //---------------------------------------------------------------
-    // Local methods
-    //---------------------------------------------------------------
-
-    /**
-     * Setup the avaiatrix pipeline here
-     */
-    private void setupAviatrix()
-    {
-        // Assemble a simple single-threaded pipeline.
-        GraphicsRenderingCapabilities caps = new GraphicsRenderingCapabilities();
-
-        GraphicsCullStage culler = new NullCullStage();
-        culler.setOffscreenCheckEnabled(false);
-
-        GraphicsSortStage sorter = new NullSortStage();
-        surface = new DebugAWTSurface(caps);
         surface.addSurfaceInfoListener(this);
-        DefaultGraphicsPipeline pipeline = new DefaultGraphicsPipeline();
 
-        pipeline.setCuller(culler);
-        pipeline.setSorter(sorter);
-        pipeline.setGraphicsOutputDevice(surface);
-
-        displayManager = new SingleDisplayCollection();
-        displayManager.addPipeline(pipeline);
-
-        // Render manager
-        sceneManager = new SingleThreadRenderManager();
-        sceneManager.addDisplay(displayManager);
-        sceneManager.setMinimumFrameInterval(100);
-
-        // Before putting the pipeline into run mode, put the canvas on
-        // screen first.
-        Component comp = (Component)surface.getSurfaceObject();
-        add(comp, BorderLayout.CENTER);
-    }
-
-    /**
-     * Setup the basic scene which consists of a quad and a viewpoint
-     */
-    private void setupSceneGraph()
-    {
         // View group
 
         Viewpoint vp = new Viewpoint();
@@ -218,6 +115,7 @@ public class GraphicsCardInfoDemo extends Frame
         SimpleViewport view = new SimpleViewport();
         view.setDimensions(0, 0, 500, 500);
         view.setScene(scene);
+        resizeManager.addManagedViewport(view);
 
         SimpleLayer layer = new SimpleLayer();
         layer.setViewport(view);

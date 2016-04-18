@@ -102,7 +102,7 @@ public class LightweightAnimationDemo extends JFrame
     /**
      * Setup the basic scene which consists of a quad and a viewpoint
      */
-    private void setupSceneGraph()
+    protected void setupSceneGraph()
     {
         // View group
 

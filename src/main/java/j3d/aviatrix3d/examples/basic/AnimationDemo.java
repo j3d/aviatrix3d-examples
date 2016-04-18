@@ -1,21 +1,12 @@
 package j3d.aviatrix3d.examples.basic;
 
 // Standard imports
-import java.awt.*;
-import java.awt.event.*;
-
 import org.j3d.maths.vector.Matrix4d;
 import org.j3d.maths.vector.Vector3d;
-import org.j3d.renderer.aviatrix3d.pipeline.ViewportResizeManager;
 import org.j3d.util.I18nManager;
 
 // Application Specific imports
 import org.j3d.aviatrix3d.*;
-
-import org.j3d.aviatrix3d.output.graphics.SimpleAWTSurface;
-import org.j3d.aviatrix3d.pipeline.graphics.*;
-import org.j3d.aviatrix3d.management.SingleThreadRenderManager;
-import org.j3d.aviatrix3d.management.SingleDisplayCollection;
 
 /**
  * Example application that demonstrates how to put together a single-threaded
@@ -24,86 +15,21 @@ import org.j3d.aviatrix3d.management.SingleDisplayCollection;
  * @author Justin Couch
  * @version $Revision: 1.13 $
  */
-public class AnimationDemo extends Frame
-    implements WindowListener
+public class AnimationDemo extends BaseDemoFrame
 {
     /** App name to register preferences under */
     private static final String APP_NAME = "BasicAnimationDemo";
 
-    /** Manager for the scene graph handling */
-    private SingleThreadRenderManager sceneManager;
-
-    /** Manager for the layers etc */
-    private SingleDisplayCollection displayManager;
-
-    /** Our drawing surface */
-    private GraphicsOutputDevice surface;
-
-    /** Makes sure the viewport is sync'd with the window size */
-    private ViewportResizeManager resizeManager;
-
     public AnimationDemo()
     {
-        super("Aviatrix Animation Demo");
+        super("Aviatrix Animation Demo", false);
 
         I18nManager intl_mgr = I18nManager.getManager();
         intl_mgr.setApplication(APP_NAME, "config.i18n.org-j3d-aviatrix3d-resources-core");
-
-        setLayout(new BorderLayout());
-        addWindowListener(this);
-
-        setupAviatrix();
-        setupSceneGraph();
-
-        setSize(600, 600);
-        setLocation(40, 40);
-
-        // Need to set visible first before starting the rendering thread due
-        // to a bug in JOGL. See JOGL Issue #54 for more information on this.
-        // http://jogl.dev.java.net
-        setVisible(true);
     }
 
-    /**
-     * Setup the avaiatrix pipeline here
-     */
-    private void setupAviatrix()
-    {
-        resizeManager = new ViewportResizeManager();
-
-        // Assemble a simple single-threaded pipeline.
-        GraphicsRenderingCapabilities caps = new GraphicsRenderingCapabilities();
-
-        GraphicsCullStage culler = new NullCullStage();
-        culler.setOffscreenCheckEnabled(false);
-
-        GraphicsSortStage sorter = new NullSortStage();
-        surface = new SimpleAWTSurface(caps);
-        surface.addGraphicsResizeListener(resizeManager);
-
-        DefaultGraphicsPipeline pipeline = new DefaultGraphicsPipeline();
-
-        pipeline.setCuller(culler);
-        pipeline.setSorter(sorter);
-        pipeline.setGraphicsOutputDevice(surface);
-
-        displayManager = new SingleDisplayCollection();
-        displayManager.addPipeline(pipeline);
-
-        // Render manager
-        sceneManager = new SingleThreadRenderManager();
-        sceneManager.setMinimumFrameInterval(10);
-
-        // Before putting the pipeline into run mode, put the canvas on
-        // screen first.
-        Component comp = (Component)surface.getSurfaceObject();
-        add(comp, BorderLayout.CENTER);
-    }
-
-    /**
-     * Setup the basic scene which consists of a quad and a viewpoint
-     */
-    private void setupSceneGraph()
+    @Override
+    protected void setupSceneGraph()
     {
         // View group
 
@@ -169,66 +95,6 @@ public class AnimationDemo extends Frame
         sceneManager.setApplicationObserver(anim);
         sceneManager.setEnabled(true);
     }
-
-    //---------------------------------------------------------------
-    // Methods defined by WindowListener
-    //---------------------------------------------------------------
-
-    /**
-     * Ignored
-     */
-    public void windowActivated(WindowEvent evt)
-    {
-    }
-
-    /**
-     * Ignored
-     */
-    public void windowClosed(WindowEvent evt)
-    {
-    }
-
-    /**
-     * Exit the application
-     *
-     * @param evt The event that caused this method to be called.
-     */
-    public void windowClosing(WindowEvent evt)
-    {
-        sceneManager.shutdown();
-        System.exit(0);
-    }
-
-    /**
-     * Ignored
-     */
-    public void windowDeactivated(WindowEvent evt)
-    {
-    }
-
-    /**
-     * Ignored
-     */
-    public void windowDeiconified(WindowEvent evt)
-    {
-    }
-
-    /**
-     * Ignored
-     */
-    public void windowIconified(WindowEvent evt)
-    {
-    }
-
-    /**
-     * When the window is opened, start everything up.
-     */
-    public void windowOpened(WindowEvent evt)
-    {
-        sceneManager.addDisplay(displayManager);
-//        sceneManager.setEnabled(true);
-    }
-
     //---------------------------------------------------------------
     // Local methods
     //---------------------------------------------------------------
@@ -236,5 +102,6 @@ public class AnimationDemo extends Frame
     public static void main(String[] args)
     {
         AnimationDemo demo = new AnimationDemo();
+        demo.setVisible(true);
     }
 }

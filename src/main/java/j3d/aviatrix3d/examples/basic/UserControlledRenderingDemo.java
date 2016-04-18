@@ -30,18 +30,9 @@ import org.j3d.maths.vector.Vector3d;
  * @author Justin Couch
  * @version $Revision: 1.7 $
  */
-public class UserControlledRenderingDemo extends Frame
-    implements WindowListener, ActionListener
+public class UserControlledRenderingDemo extends BaseDemoFrame
+    implements ActionListener
 {
-    /** Manager for the scene graph handling */
-    private SingleThreadRenderManager sceneManager;
-
-    /** Manager for the layers etc */
-    private SingleDisplayCollection displayManager;
-
-    /** Our drawing surface */
-    private GraphicsOutputDevice surface;
-
     /** Where we are going to change the material colour */
     private Material material;
 
@@ -51,65 +42,17 @@ public class UserControlledRenderingDemo extends Frame
     public UserControlledRenderingDemo()
     {
         super("renderOnce() Demo");
-
-        setLayout(new BorderLayout());
-        addWindowListener(this);
-
-        setupAviatrix();
-        setupSceneGraph();
-
-        setSize(600, 600);
-        setLocation(40, 40);
-
-        // Need to set visible first before starting the rendering thread due
-        // to a bug in JOGL. See JOGL Issue #54 for more information on this.
-        // http://jogl.dev.java.net
-        setVisible(true);
     }
 
-    /**
-     * Setup the avaiatrix pipeline here
-     */
-    private void setupAviatrix()
+    @Override
+    protected void setupSceneGraph()
     {
-        // Assemble a simple single-threaded pipeline.
-        GraphicsRenderingCapabilities caps = new GraphicsRenderingCapabilities();
-
-        GraphicsCullStage culler = new NullCullStage();
-        culler.setOffscreenCheckEnabled(false);
-
-        GraphicsSortStage sorter = new NullSortStage();
-        surface = new SimpleAWTSurface(caps);
-        DefaultGraphicsPipeline pipeline = new DefaultGraphicsPipeline();
-
-        pipeline.setCuller(culler);
-        pipeline.setSorter(sorter);
-        pipeline.setGraphicsOutputDevice(surface);
-
-        displayManager = new SingleDisplayCollection();
-        displayManager.addPipeline(pipeline);
-
-        // Render manager
-        sceneManager = new SingleThreadRenderManager();
-        sceneManager.addDisplay(displayManager);
-        sceneManager.setMinimumFrameInterval(100);
-
-        // Before putting the pipeline into run mode, put the canvas on
-        // screen first.
-        Component comp = (Component)surface.getSurfaceObject();
-        add(comp, BorderLayout.CENTER);
 
         Button btn = new Button("Press to Render");
         btn.addActionListener(this);
 
         add(btn, BorderLayout.SOUTH);
-    }
 
-    /**
-     * Setup the basic scene which consists of a quad and a viewpoint
-     */
-    private void setupSceneGraph()
-    {
         // View group
 
         Viewpoint vp = new Viewpoint();
@@ -165,6 +108,7 @@ public class UserControlledRenderingDemo extends Frame
         SimpleViewport view = new SimpleViewport();
         view.setDimensions(0, 0, 500, 500);
         view.setScene(scene);
+        resizeManager.addManagedViewport(view);
 
         SimpleLayer layer = new SimpleLayer();
         layer.setViewport(view);
@@ -173,42 +117,12 @@ public class UserControlledRenderingDemo extends Frame
         displayManager.setLayers(layers, 1);
     }
 
-    //---------------------------------------------------------------
-    // Methods defined by WindowListener
-    //---------------------------------------------------------------
-
-    @Override
-    public void windowActivated(WindowEvent evt)
-    {
-    }
-
-    @Override
-    public void windowClosed(WindowEvent evt)
-    {
-    }
-
-    @Override
-    public void windowClosing(WindowEvent evt)
-    {
-        sceneManager.shutdown();
-        System.exit(0);
-    }
-
-    @Override
-    public void windowDeactivated(WindowEvent evt)
-    {
-    }
-
-    @Override
-    public void windowDeiconified(WindowEvent evt)
-    {
-    }
-
-    @Override
-    public void windowIconified(WindowEvent evt)
-    {
-    }
-
+    /**
+     * Override the base class version so that we don't start the complete rendering
+     * engine. We only want to render it a single time on showing.
+     *
+     * @param evt The event that caused this to be triggered.
+     */
     @Override
     public void windowOpened(WindowEvent evt)
     {
@@ -230,8 +144,7 @@ public class UserControlledRenderingDemo extends Frame
     // Local methods
     //---------------------------------------------------------------
 
-
-    public void changeNodeColour()
+    private void changeNodeColour()
     {
         colourIteration = ++colourIteration % 7;
 
