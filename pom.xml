@@ -7,8 +7,36 @@
     <groupId>j3d</groupId>
     <artifactId>aviatrix3d-examples</artifactId>
     <version>3.0.0-SNAPSHOT</version>
-    <packaging>tar.gz</packaging>
+    <packaging>bundle</packaging>
     <name>Aviatrix3D Examples</name>
+
+    <description>Examples demonstrating the Aviatrix3D library</description>
+    <url>http://aviatrix3d.j3d.org</url>
+
+    <licenses>
+        <license>
+            <distribution>repo</distribution>
+            <name>BSD 3-Clause</name>
+            <comments>Copyright j3d.org 2000-2016</comments>
+        </license>
+    </licenses>
+    <developers>
+        <developer>
+            <name>Justin Couch</name>
+        </developer>
+        <developer>
+            <name>Alan Hudson</name>
+        </developer>
+        <developer>
+            <name>Rex Melton</name>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:git://github.com/j3d/aviatrix3d-examples.git</connection>
+        <developerConnection>scm:git:git@github.com:j3d/aviatrix3d-examples.git</developerConnection>
+        <url>https://github.com/j3d/aviatrix3d-examples</url>
+    </scm>
 
     <properties>
         <maven.jar.plugin.version>2.4</maven.jar.plugin.version>
@@ -117,6 +145,11 @@
             <groupId>org.j3d</groupId>
             <artifactId>aviatrix3d-swt</artifactId>
             <version>${aviatrix3d.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.j3d</groupId>
+            <artifactId>j3d-core</artifactId>
+            <version>3.1.0-SNAPSHOT</version>
         </dependency>
     </dependencies>
 
