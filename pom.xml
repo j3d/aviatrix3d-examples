@@ -7,13 +7,15 @@
     <groupId>j3d</groupId>
     <artifactId>aviatrix3d-examples</artifactId>
     <version>3.0.0-SNAPSHOT</version>
-    <packaging>jar</packaging>
+    <packaging>tar.gz</packaging>
     <name>Aviatrix3D Examples</name>
 
     <properties>
         <maven.jar.plugin.version>2.4</maven.jar.plugin.version>
         <maven.assembly.plugin.version>2.4</maven.assembly.plugin.version>
         <jogamp.version>2.3.2</jogamp.version>
+        <j3d.tools.version>3.0.0</j3d.tools.version>
+        <aviatrix3d.version>3.0.0-SNAPSHOT</aviatrix3d.version>
     </properties>
 
     <pluginRepositories>
@@ -96,25 +98,25 @@
         <dependency>
             <groupId>org.j3d</groupId>
             <artifactId>j3d-core</artifactId>
-            <version>3.0.0</version>
+            <version>${j3d.tools.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.j3d</groupId>
             <artifactId>aviatrix3d-core</artifactId>
-            <version>3.0.0-SNAPSHOT</version>
+            <version>${aviatrix3d.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.j3d</groupId>
             <artifactId>aviatrix3d-extensions</artifactId>
-            <version>3.0.0-SNAPSHOT</version>
+            <version>${aviatrix3d.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.j3d</groupId>
             <artifactId>aviatrix3d-swt</artifactId>
-            <version>3.0.0-SNAPSHOT</version>
+            <version>${aviatrix3d.version}</version>
         </dependency>
     </dependencies>
 
