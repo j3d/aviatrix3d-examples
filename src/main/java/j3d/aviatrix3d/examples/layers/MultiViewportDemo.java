@@ -1,20 +1,11 @@
 package j3d.aviatrix3d.examples.layers;
 
 // External imports
-import java.awt.*;
-import java.awt.event.*;
-
 import org.j3d.maths.vector.Matrix4d;
 import org.j3d.maths.vector.Vector3d;
-import org.j3d.renderer.aviatrix3d.pipeline.ViewportLayoutManager;
 
 // Local imports
 import org.j3d.aviatrix3d.*;
-
-import org.j3d.aviatrix3d.output.graphics.DebugAWTSurface;
-import org.j3d.aviatrix3d.pipeline.graphics.*;
-import org.j3d.aviatrix3d.management.SingleThreadRenderManager;
-import org.j3d.aviatrix3d.management.SingleDisplayCollection;
 
 /**
  * Example application that demonstrates a single layer with multiple viewports
@@ -26,85 +17,21 @@ import org.j3d.aviatrix3d.management.SingleDisplayCollection;
  * @author Justin Couch
  * @version $Revision: 1.5 $
  */
-public class MultiViewportDemo extends Frame
-    implements WindowListener, ApplicationUpdateObserver
+public class MultiViewportDemo extends MultiViewBaseDemoFrame
 {
     private static final float[] RED = {1, 0, 0};
     private static final float[] GREEN = {0, 1, 0};
     private static final float[] BLUE = {0, 0, 1};
 
-    /** Manager for the scene graph handling */
-    private SingleThreadRenderManager sceneManager;
-
-    /** Manager for the layers etc */
-    private SingleDisplayCollection displayManager;
-
-    /** Our drawing surface */
-    private GraphicsOutputDevice surface;
-
-    private ViewportLayoutManager resizeManager;
-
     public MultiViewportDemo()
     {
         super("Multiple Viewport Aviatrix3D Demo");
-
-        setLayout(new BorderLayout());
-        addWindowListener(this);
-
-        setupAviatrix();
-        setupSceneGraph();
-
-        setSize(800, 800);
-        setLocation(40, 40);
-
-        // Need to set visible first before starting the rendering thread due
-        // to a bug in JOGL. See JOGL Issue #54 for more information on this.
-        // http://jogl.dev.java.net
-        setVisible(true);
-    }
-
-    /**
-     * Setup the avaiatrix pipeline here
-     */
-    private void setupAviatrix()
-    {
-        resizeManager = new ViewportLayoutManager();
-
-        // Assemble a simple single-threaded pipeline.
-        GraphicsRenderingCapabilities caps = new GraphicsRenderingCapabilities();
-
-        GraphicsCullStage culler = new NullCullStage();
-        culler.setOffscreenCheckEnabled(false);
-
-        GraphicsSortStage sorter = new NullSortStage();
-        surface = new DebugAWTSurface(caps);
-        surface.addGraphicsResizeListener(resizeManager);
-
-        DefaultGraphicsPipeline pipeline = new DefaultGraphicsPipeline();
-
-        pipeline.setCuller(culler);
-        pipeline.setSorter(sorter);
-        pipeline.setGraphicsOutputDevice(surface);
-
-        displayManager = new SingleDisplayCollection();
-        displayManager.addPipeline(pipeline);
-
-        // Render manager
-        sceneManager = new SingleThreadRenderManager();
-        sceneManager.addDisplay(displayManager);
-        sceneManager.setMinimumFrameInterval(500);
-        sceneManager.setApplicationObserver(this);
-
-        // Before putting the pipeline into run mode, put the canvas on
-        // screen first.
-        Component comp = (Component)surface.getSurfaceObject();
-        add(comp, BorderLayout.CENTER);
     }
 
     /**
      * Setup the basic scene which consists of a quad and a viewpoint
      */
-    private void setupSceneGraph()
+    protected void setupSceneGraph()
     {
         // Flat panel that has the viewable object as the demo
         float[] coord = { 0, 0, -1, 0.25f, 0, -1, 0, 0.25f, -1 };
@@ -255,64 +182,6 @@ public class MultiViewportDemo extends Frame
 
         Layer[] layers = { layer };
         displayManager.setLayers(layers, 1);
-    }
-
-    //---------------------------------------------------------------
-    // Methods defined by WindowListener
-    //---------------------------------------------------------------
-
-    @Override
-    public void windowActivated(WindowEvent evt)
-    {
-    }
-
-    @Override
-    public void windowClosed(WindowEvent evt)
-    {
-    }
-
-    @Override
-    public void windowClosing(WindowEvent evt)
-    {
-        sceneManager.shutdown();
-        System.exit(0);
-    }
-
-    @Override
-    public void windowDeactivated(WindowEvent evt)
-    {
-    }
-
-    @Override
-    public void windowDeiconified(WindowEvent evt)
-    {
-    }
-
-    @Override
-    public void windowIconified(WindowEvent evt)
-    {
-    }
-
-    @Override
-    public void windowOpened(WindowEvent evt)
-    {
-        sceneManager.setEnabled(true);
-    }
-
-    //---------------------------------------------------------------
-    // Methods defined by ApplicationUpdateObserver
-    //---------------------------------------------------------------
-
-    @Override
-    public void updateSceneGraph()
-    {
-        resizeManager.sendResizeUpdates();
-    }
-
-    @Override
-    public void appShutdown()
-    {
-        // do nothing
     }
 
     //---------------------------------------------------------------

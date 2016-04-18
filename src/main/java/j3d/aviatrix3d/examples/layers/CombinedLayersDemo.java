@@ -29,8 +29,7 @@ import org.j3d.util.MatrixUtils;
  * @author Justin Couch
  * @version $Revision: 1.4 $
  */
-public class CombinedLayersDemo extends Frame
-    implements WindowListener
+public class CombinedLayersDemo extends MultiViewBaseDemoFrame
 {
     private static final float[] RED = {1, 0, 0};
     private static final float[] GREEN = {0, 1, 0};
@@ -39,78 +38,13 @@ public class CombinedLayersDemo extends Frame
     private static final float[] GREY = {0.3f, 0.3f, 0.3f};
     private static final float[] TRANSPARENT_BLACK = {0, 0, 0, 1};
 
-    /** Manager for the scene graph handling */
-    private SingleThreadRenderManager sceneManager;
-
-    /** Manager for the layers etc */
-    private SingleDisplayCollection displayManager;
-
-    /** Our drawing surface */
-    private GraphicsOutputDevice surface;
-
-    private ViewportLayoutManager resizeManager;
-
     public CombinedLayersDemo()
     {
-        super("Combined Layer/Viewport Aviatrix3D Demo");
-
-        setLayout(new BorderLayout());
-        addWindowListener(this);
-
-        setupAviatrix();
-        setupSceneGraph();
-
-        setSize(800, 800);
-        setLocation(40, 40);
-
-        // Need to set visible first before starting the rendering thread due
-        // to a bug in JOGL. See JOGL Issue #54 for more information on this.
-        // http://jogl.dev.java.net
-        setVisible(true);
+        super("Combined Layer/Viewport Aviatrix3D Demo", null, new SimpleTransparencySortStage(), false);
     }
 
-    /**
-     * Setup the avaiatrix pipeline here
-     */
-    private void setupAviatrix()
-    {
-        resizeManager = new ViewportLayoutManager();
-
-        // Assemble a simple single-threaded pipeline.
-        GraphicsRenderingCapabilities caps = new GraphicsRenderingCapabilities();
-
-        GraphicsCullStage culler = new NullCullStage();
-        culler.setOffscreenCheckEnabled(false);
-
-        GraphicsSortStage sorter = new SimpleTransparencySortStage();
-        surface = new DebugAWTSurface(caps);
-        surface.setColorClearNeeded(false);  // we're using a background
-        surface.addGraphicsResizeListener(resizeManager);
-
-        DefaultGraphicsPipeline pipeline = new DefaultGraphicsPipeline();
-
-        pipeline.setCuller(culler);
-        pipeline.setSorter(sorter);
-        pipeline.setGraphicsOutputDevice(surface);
-
-        displayManager = new SingleDisplayCollection();
-        displayManager.addPipeline(pipeline);
-
-        // Render manager
-        sceneManager = new SingleThreadRenderManager();
-        sceneManager.addDisplay(displayManager);
-        sceneManager.setMinimumFrameInterval(10);
-
-        // Before putting the pipeline into run mode, put the canvas on
-        // screen first.
-        Component comp = (Component)surface.getSurfaceObject();
-        add(comp, BorderLayout.CENTER);
-    }
-
-    /**
-     * Setup the basic scene which consists of a quad and a viewpoint
-     */
-    private void setupSceneGraph()
+    @Override
+    protected void setupSceneGraph()
     {
         // Flat panel that has the viewable object as the demo
         float[] coord = { 0, 0, -1,
@@ -361,48 +295,6 @@ public class CombinedLayersDemo extends Frame
             new CombinedLayerAnimation(layer1_group, layer2_2_group, resizeManager);
 
         sceneManager.setApplicationObserver(anim);
-    }
-
-    //---------------------------------------------------------------
-    // Methods defined by WindowListener
-    //---------------------------------------------------------------
-
-    @Override
-    public void windowActivated(WindowEvent evt)
-    {
-    }
-
-    @Override
-    public void windowClosed(WindowEvent evt)
-    {
-    }
-
-    @Override
-    public void windowClosing(WindowEvent evt)
-    {
-        sceneManager.shutdown();
-        System.exit(0);
-    }
-
-    @Override
-    public void windowDeactivated(WindowEvent evt)
-    {
-    }
-
-    @Override
-    public void windowDeiconified(WindowEvent evt)
-    {
-    }
-
-    @Override
-    public void windowIconified(WindowEvent evt)
-    {
-    }
-
-    @Override
-    public void windowOpened(WindowEvent evt)
-    {
-        sceneManager.setEnabled(true);
     }
 
     //---------------------------------------------------------------

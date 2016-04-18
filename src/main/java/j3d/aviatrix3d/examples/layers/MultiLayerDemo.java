@@ -4,6 +4,7 @@ package j3d.aviatrix3d.examples.layers;
 import java.awt.*;
 import java.awt.event.*;
 
+import j3d.aviatrix3d.examples.basic.BaseDemoFrame;
 import org.j3d.maths.vector.Matrix4d;
 import org.j3d.maths.vector.Vector3d;
 
@@ -31,79 +32,20 @@ import org.j3d.aviatrix3d.management.SingleDisplayCollection;
  * @author Justin Couch
  * @version $Revision: 1.6 $
  */
-public class MultiLayerDemo extends Frame
-    implements WindowListener
+public class MultiLayerDemo extends BaseDemoFrame
 {
     private static final float[] RED = {1, 0, 0};
     private static final float[] GREEN = {0, 1, 0};
     private static final float[] BLUE = {0, 0, 1};
     private static final float[] GREY = {0.3f, 0.3f, 0.3f};
 
-    /** Manager for the scene graph handling */
-    private SingleThreadRenderManager sceneManager;
-
-    /** Manager for the layers etc */
-    private SingleDisplayCollection displayManager;
-
-    /** Our drawing surface */
-    private GraphicsOutputDevice surface;
-
     public MultiLayerDemo()
     {
-        super("Multiple Layer Aviatrix3D Demo");
-
-        setLayout(new BorderLayout());
-        addWindowListener(this);
-
-        setupAviatrix();
-        setupSceneGraph();
-
-        setSize(800, 800);
-        setLocation(40, 40);
-
-        // Need to set visible first before starting the rendering thread due
-        // to a bug in JOGL. See JOGL Issue #54 for more information on this.
-        // http://jogl.dev.java.net
-        setVisible(true);
+        super("Multiple Layer Aviatrix3D Demo", null, new SimpleTransparencySortStage(), false);
     }
 
-    /**
-     * Setup the avaiatrix pipeline here
-     */
-    private void setupAviatrix()
-    {
-        // Assemble a simple single-threaded pipeline.
-        GraphicsRenderingCapabilities caps = new GraphicsRenderingCapabilities();
-
-        GraphicsCullStage culler = new NullCullStage();
-        culler.setOffscreenCheckEnabled(false);
-
-        GraphicsSortStage sorter = new SimpleTransparencySortStage();
-        surface = new DebugAWTSurface(caps);
-        DefaultGraphicsPipeline pipeline = new DefaultGraphicsPipeline();
-
-        pipeline.setCuller(culler);
-        pipeline.setSorter(sorter);
-        pipeline.setGraphicsOutputDevice(surface);
-
-        displayManager = new SingleDisplayCollection();
-        displayManager.addPipeline(pipeline);
-
-        // Render manager
-        sceneManager = new SingleThreadRenderManager();
-        sceneManager.addDisplay(displayManager);
-        sceneManager.setMinimumFrameInterval(10);
-
-        // Before putting the pipeline into run mode, put the canvas on
-        // screen first.
-        Component comp = (Component)surface.getSurfaceObject();
-        add(comp, BorderLayout.CENTER);
-    }
-
-    /**
-     * Setup the basic scene which consists of a quad and a viewpoint
-     */
-    private void setupSceneGraph()
+    @Override
+    protected void setupSceneGraph()
     {
         // View group
 
@@ -249,14 +191,17 @@ public class MultiLayerDemo extends Frame
         SimpleViewport view1 = new SimpleViewport();
         view1.setDimensions(0, 0, 800, 800);
         view1.setScene(scene1);
+        resizeManager.addManagedViewport(view1);
 
         SimpleViewport view2 = new SimpleViewport();
         view2.setDimensions(0, 0, 800, 800);
         view2.setScene(scene2);
+        resizeManager.addManagedViewport(view2);
 
         SimpleViewport view3 = new SimpleViewport();
         view3.setDimensions(0, 0, 800, 800);
         view3.setScene(scene3);
+        resizeManager.addManagedViewport(view3);
 
         SimpleLayer layer1 = new SimpleLayer();
         layer1.setViewport(view1);
@@ -270,66 +215,8 @@ public class MultiLayerDemo extends Frame
         Layer[] layers = { layer1, layer2, layer3 };
         displayManager.setLayers(layers, 3);
 
-        ObjectLayerAnimation anim = new ObjectLayerAnimation(layer2_group);
+        ObjectLayerAnimation anim = new ObjectLayerAnimation(layer2_group, resizeManager);
         sceneManager.setApplicationObserver(anim);
-    }
-
-    //---------------------------------------------------------------
-    // Methods defined by WindowListener
-    //---------------------------------------------------------------
-
-    /**
-     * Ignored
-     */
-    public void windowActivated(WindowEvent evt)
-    {
-    }
-
-    /**
-     * Ignored
-     */
-    public void windowClosed(WindowEvent evt)
-    {
-    }
-
-    /**
-     * Exit the application
-     *
-     * @param evt The event that caused this method to be called.
-     */
-    public void windowClosing(WindowEvent evt)
-    {
-        sceneManager.shutdown();
-        System.exit(0);
-    }
-
-    /**
-     * Ignored
-     */
-    public void windowDeactivated(WindowEvent evt)
-    {
-    }
-
-    /**
-     * Ignored
-     */
-    public void windowDeiconified(WindowEvent evt)
-    {
-    }
-
-    /**
-     * Ignored
-     */
-    public void windowIconified(WindowEvent evt)
-    {
-    }
-
-    /**
-     * When the window is opened, start everything up.
-     */
-    public void windowOpened(WindowEvent evt)
-    {
-        sceneManager.setEnabled(true);
     }
 
     //---------------------------------------------------------------

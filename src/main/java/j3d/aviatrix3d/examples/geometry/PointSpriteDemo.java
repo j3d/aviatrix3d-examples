@@ -1,33 +1,21 @@
 package j3d.aviatrix3d.examples.geometry;
 
 // Standard imports
-import java.awt.*;
-import java.awt.event.*;
-
-import java.awt.image.BufferedImage;
-
 import java.nio.ByteOrder;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 
-import java.io.*;
-
-import javax.imageio.ImageIO;
+import j3d.aviatrix3d.examples.basic.BaseDemoFrame;
 import org.j3d.maths.vector.Matrix4d;
 import org.j3d.maths.vector.Vector3d;
 
 
 // Application Specific imports
 import org.j3d.aviatrix3d.*;
-
-import org.j3d.aviatrix3d.output.graphics.SimpleAWTSurface;
-import org.j3d.aviatrix3d.pipeline.graphics.*;
-import org.j3d.aviatrix3d.management.SingleThreadRenderManager;
-import org.j3d.aviatrix3d.management.SingleDisplayCollection;
+import org.j3d.aviatrix3d.pipeline.graphics.GenericCullStage;
+import org.j3d.aviatrix3d.pipeline.graphics.StateAndTransparencyDepthSortStage;
 
 import org.j3d.renderer.aviatrix3d.nodes.SortedPointArray;
-import org.j3d.renderer.aviatrix3d.pipeline.ViewportResizeManager;
-import org.j3d.util.DataUtils;
 
 /**
  * Example application that demonstrates the use of point sprites.
@@ -35,132 +23,19 @@ import org.j3d.util.DataUtils;
  * @author Justin Couch
  * @version $Revision: 1.2 $
  */
-public class PointSpriteDemo extends Frame
-    implements WindowListener
+public class PointSpriteDemo extends BaseDemoFrame
 {
-    /** Manager for the scene graph handling */
-    private SingleThreadRenderManager sceneManager;
-
-    /** Manager for the layers etc */
-    private SingleDisplayCollection displayManager;
-
-    /** Our drawing surface */
-    private GraphicsOutputDevice surface;
-
-    private ViewportResizeManager resizeManager;
-
     public PointSpriteDemo()
     {
-        super("Point Sprite Aviatrix Demo");
-
-        setLayout(new BorderLayout());
-        addWindowListener(this);
-
-        setupAviatrix();
-        setupSceneGraph();
-
-        setSize(600, 600);
-        setLocation(40, 40);
-
-        // Need to set visible first before starting the rendering thread due
-        // to a bug in JOGL. See JOGL Issue #54 for more information on this.
-        // http://jogl.dev.java.net
-        setVisible(true);
+        super("Point Sprite Aviatrix Demo", new GenericCullStage(), new StateAndTransparencyDepthSortStage(), false);
     }
 
-    /**
-     * Setup the avaiatrix pipeline here
-     */
-    private void setupAviatrix()
-    {
-        resizeManager = new ViewportResizeManager();
-
-        // Assemble a simple single-threaded pipeline.
-        GraphicsRenderingCapabilities caps = new GraphicsRenderingCapabilities();
-
-        GraphicsCullStage culler = new GenericCullStage();
-        culler.setOffscreenCheckEnabled(false);
-
-        GraphicsSortStage sorter = new StateAndTransparencyDepthSortStage();
-        surface = new SimpleAWTSurface(caps);
-        surface.addGraphicsResizeListener(resizeManager);
-
-        DefaultGraphicsPipeline pipeline = new DefaultGraphicsPipeline();
-
-        pipeline.setCuller(culler);
-        pipeline.setSorter(sorter);
-        pipeline.setGraphicsOutputDevice(surface);
-
-        displayManager = new SingleDisplayCollection();
-        displayManager.addPipeline(pipeline);
-
-        // Render manager
-        sceneManager = new SingleThreadRenderManager();
-        sceneManager.addDisplay(displayManager);
-        sceneManager.setMinimumFrameInterval(20);
-
-        // Before putting the pipeline into run mode, put the canvas on
-        // screen first.
-        Component comp = (Component)surface.getSurfaceObject();
-        add(comp, BorderLayout.CENTER);
-    }
-
-    /**
-     * Setup the basic scene which consists of a quad and a viewpoint
-     */
-    private void setupSceneGraph()
+    @Override
+    protected void setupSceneGraph()
     {
         // Load the texture image
-        TextureComponent2D img_comp = null;
-        int img_width = 0;
-        int img_height = 0;
-
-        try
-        {
-            File f = DataUtils.lookForFile("images/examples/geometry/halo.jpg", getClass(), null);
-//            File f = DataUtils.lookForFile("images/examples/geometry/big_glow.jpg", getClass(), null);
-            if(f == null)
-            {
-                System.out.println("Can't find point sprite source file");
-            }
-            else
-            {
-
-                FileInputStream is = new FileInputStream(f);
-
-                BufferedInputStream stream = new BufferedInputStream(is);
-                BufferedImage img = ImageIO.read(stream);
-
-                img_width = img.getWidth(null);
-                img_height = img.getHeight(null);
-                int format = TextureComponent.FORMAT_RGB;
-
-                switch (img.getType())
-                {
-                    case BufferedImage.TYPE_3BYTE_BGR:
-                    case BufferedImage.TYPE_CUSTOM:
-                    case BufferedImage.TYPE_INT_RGB:
-                        System.out.println("TD RGB");
-                        break;
-
-                    case BufferedImage.TYPE_4BYTE_ABGR:
-                    case BufferedImage.TYPE_INT_ARGB:
-                        System.out.println("TD RGBA");
-                        format = TextureComponent.FORMAT_RGBA;
-                        break;
-                }
-
-                img_comp = new ImageTextureComponent2D(format,
-                                                       img_width,
-                                                       img_height,
-                                                       img);
-            }
-        }
-        catch(IOException ioe)
-        {
-            System.out.println("Error reading image: " + ioe);
-        }
-
+        TextureComponent2D img_comp = loadTexture("images/examples/geometry/halo.jpg");
+//        TextureComponent2D img_comp = loadTexture("images/examples/geometry/big_glow.jpg");
         // View group
 
         Viewpoint vp = new Viewpoint();
@@ -263,64 +138,6 @@ public class PointSpriteDemo extends Frame
     }
 
     //---------------------------------------------------------------
-    // Methods defined by WindowListener
-    //---------------------------------------------------------------
-
-    /**
-     * Ignored
-     */
-    public void windowActivated(WindowEvent evt)
-    {
-    }
-
-    /**
-     * Ignored
-     */
-    public void windowClosed(WindowEvent evt)
-    {
-    }
-
-    /**
-     * Exit the application
-     *
-     * @param evt The event that caused this method to be called.
-     */
-    public void windowClosing(WindowEvent evt)
-    {
-        sceneManager.shutdown();
-        System.exit(0);
-    }
-
-    /**
-     * Ignored
-     */
-    public void windowDeactivated(WindowEvent evt)
-    {
-    }
-
-    /**
-     * Ignored
-     */
-    public void windowDeiconified(WindowEvent evt)
-    {
-    }
-
-    /**
-     * Ignored
-     */
-    public void windowIconified(WindowEvent evt)
-    {
-    }
-
-    /**
-     * When the window is opened, start everything up.
-     */
-    public void windowOpened(WindowEvent evt)
-    {
-        sceneManager.setEnabled(true);
-    }
-
-    //---------------------------------------------------------------
     // Local methods
     //---------------------------------------------------------------
 
@@ -330,7 +147,7 @@ public class PointSpriteDemo extends Frame
      *
      * @param size The number of floats to have in the array
      */
-    protected FloatBuffer createBuffer(int size)
+    private FloatBuffer createBuffer(int size)
     {
         // Need to allocate a byte buffer 4 times the size requested because the
         // size is treated as bytes, not number of floats.
@@ -344,5 +161,6 @@ public class PointSpriteDemo extends Frame
     public static void main(String[] args)
     {
         PointSpriteDemo demo = new PointSpriteDemo();
+        demo.setVisible(true);
     }
 }

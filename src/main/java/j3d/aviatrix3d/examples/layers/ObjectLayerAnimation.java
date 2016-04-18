@@ -3,6 +3,7 @@ package j3d.aviatrix3d.examples.layers;
 // External imports
 import org.j3d.maths.vector.Matrix4d;
 import org.j3d.maths.vector.Vector3d;
+import org.j3d.renderer.aviatrix3d.pipeline.ViewportResizeManager;
 
 // Local imports
 import org.j3d.aviatrix3d.*;
@@ -28,11 +29,14 @@ public class ObjectLayerAnimation
     /** The current angle */
     private float angle;
 
+    private ViewportResizeManager resizeManager;
+
     /**
      *
      */
-    public ObjectLayerAnimation(TransformGroup tx)
+    public ObjectLayerAnimation(TransformGroup tx, ViewportResizeManager resizer)
     {
+        resizeManager = resizer;
         translation = new Vector3d();
         matrix = new Matrix4d();
         matrix.setIdentity();
@@ -48,6 +52,7 @@ public class ObjectLayerAnimation
      */
     public void updateSceneGraph()
     {
+        resizeManager.sendResizeUpdates();
         transform.boundsChanged(this);
     }
 
@@ -74,7 +79,7 @@ public class ObjectLayerAnimation
      */
     public void updateNodeBoundsChanges(Object src)
     {
-        angle += Math.PI / 1000;
+        angle += Math.PI / 100;
 
         float z = 0.5f * (float)Math.sin(angle);
         float y = 0.5f * (float)Math.cos(angle);

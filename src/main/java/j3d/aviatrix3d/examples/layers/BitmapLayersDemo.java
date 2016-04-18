@@ -2,19 +2,15 @@ package j3d.aviatrix3d.examples.layers;
 
 // External imports
 import java.awt.*;
-import java.awt.event.*;
 
+import j3d.aviatrix3d.examples.basic.BaseDemoFrame;
 import org.j3d.maths.vector.Matrix4d;
 import org.j3d.maths.vector.Vector3d;
-import org.j3d.renderer.aviatrix3d.pipeline.ViewportResizeManager;
 
 // Local imports
 import org.j3d.aviatrix3d.*;
 
-import org.j3d.aviatrix3d.output.graphics.DebugAWTSurface;
 import org.j3d.aviatrix3d.pipeline.graphics.*;
-import org.j3d.aviatrix3d.management.SingleThreadRenderManager;
-import org.j3d.aviatrix3d.management.SingleDisplayCollection;
 
 /**
  * Example application that demonstrates a multiple level layers within a
@@ -27,8 +23,7 @@ import org.j3d.aviatrix3d.management.SingleDisplayCollection;
  * @author Justin Couch
  * @version $Revision: 1.2 $
  */
-public class BitmapLayersDemo extends Frame
-    implements WindowListener, ApplicationUpdateObserver
+public class BitmapLayersDemo extends BaseDemoFrame
 {
     /** bitwise descriptions for each character of the alphabet */
     private byte CHAR_RASTERS[][] =
@@ -134,79 +129,15 @@ public class BitmapLayersDemo extends Frame
     private static final float[] BLUE = {0, 0, 1};
     private static final float[] GREY = {0.3f, 0.3f, 0.3f};
 
-    /** Manager for the scene graph handling */
-    private SingleThreadRenderManager sceneManager;
-
-    /** Manager for the layers etc */
-    private SingleDisplayCollection displayManager;
-
-    /** Our drawing surface */
-    private GraphicsOutputDevice surface;
-
-    private ViewportResizeManager resizeManager;
-
     public BitmapLayersDemo()
     {
-        super("2D Bitmaps Aviatrix3D Demo");
-
-        setLayout(new BorderLayout());
-        addWindowListener(this);
-
-        setupAviatrix();
-        setupSceneGraph();
-
-        setSize(800, 800);
-        setLocation(40, 40);
-
-        // Need to set visible first before starting the rendering thread due
-        // to a bug in JOGL. See JOGL Issue #54 for more information on this.
-        // http://jogl.dev.java.net
-        setVisible(true);
-    }
-
-    /**
-     * Setup the avaiatrix pipeline here
-     */
-    private void setupAviatrix()
-    {
-        resizeManager = new ViewportResizeManager();
-
-        // Assemble a simple single-threaded pipeline.
-        GraphicsRenderingCapabilities caps = new GraphicsRenderingCapabilities();
-
-        GraphicsCullStage culler = new NullCullStage();
-        culler.setOffscreenCheckEnabled(false);
-
-        GraphicsSortStage sorter = new SimpleTransparencySortStage();
-//        GraphicsSortStage sorter = new NullSortStage();
-        surface = new DebugAWTSurface(caps);
-        surface.setColorClearNeeded(false);  // we're using a background
-        surface.addGraphicsResizeListener(resizeManager);
-
-        DefaultGraphicsPipeline pipeline = new DefaultGraphicsPipeline();
-
-        pipeline.setCuller(culler);
-        pipeline.setSorter(sorter);
-        pipeline.setGraphicsOutputDevice(surface);
-
-        displayManager = new SingleDisplayCollection();
-        displayManager.addPipeline(pipeline);
-
-        // Render manager
-        sceneManager = new SingleThreadRenderManager();
-        sceneManager.addDisplay(displayManager);
-        sceneManager.setMinimumFrameInterval(100);
-
-        // Before putting the pipeline into run mode, put the canvas on
-        // screen first.
-        Component comp = (Component)surface.getSurfaceObject();
-        add(comp, BorderLayout.CENTER);
+        super("2D Bitmaps Aviatrix3D Demo", null, new SimpleTransparencySortStage(), true);
     }
 
     /**
      * Setup the basic scene which consists of a quad and a viewpoint
      */
-    private void setupSceneGraph()
+    protected void setupSceneGraph()
     {
         // Middle layer. Object in the middle of the screen, no background
         Viewpoint vp = new Viewpoint();
@@ -258,64 +189,6 @@ public class BitmapLayersDemo extends Frame
 
         Layer[] layers = { layer };
         displayManager.setLayers(layers, 1);
-    }
-
-    //---------------------------------------------------------------
-    // Methods defined by WindowListener
-    //---------------------------------------------------------------
-
-    @Override
-    public void windowActivated(WindowEvent evt)
-    {
-    }
-
-    @Override
-    public void windowClosed(WindowEvent evt)
-    {
-    }
-
-    @Override
-    public void windowClosing(WindowEvent evt)
-    {
-        sceneManager.shutdown();
-        System.exit(0);
-    }
-
-    @Override
-    public void windowDeactivated(WindowEvent evt)
-    {
-    }
-
-    @Override
-    public void windowDeiconified(WindowEvent evt)
-    {
-    }
-
-    @Override
-    public void windowIconified(WindowEvent evt)
-    {
-    }
-
-    @Override
-    public void windowOpened(WindowEvent evt)
-    {
-        sceneManager.setEnabled(true);
-    }
-
-    //---------------------------------------------------------------
-    // Methods defined by ApplicationUpdateObserver
-    //---------------------------------------------------------------
-
-    @Override
-    public void updateSceneGraph()
-    {
-        resizeManager.sendResizeUpdates();
-    }
-
-    @Override
-    public void appShutdown()
-    {
-        // do nothing
     }
 
     //---------------------------------------------------------------
