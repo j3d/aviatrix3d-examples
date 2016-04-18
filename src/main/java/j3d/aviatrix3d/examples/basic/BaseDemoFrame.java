@@ -61,7 +61,7 @@ public abstract class BaseDemoFrame extends JFrame
      * @param title The title to place on the frame for the demo
      */
     protected BaseDemoFrame(String title) {
-        this(title, new NullCullStage(), new NullSortStage(), true);
+        this(title, null, null, true);
     }
 
     /**
@@ -73,9 +73,18 @@ public abstract class BaseDemoFrame extends JFrame
      *    if you want to do it yourself (eg you have a custom animator in use)
      */
     protected BaseDemoFrame(String title, boolean manageResize) {
-        this(title, new NullCullStage(), new NullSortStage(), manageResize);
+        this(title, null, null, manageResize);
     }
 
+    /**
+     * Fully configurable constructor.
+     *
+     * @param title The title to place on the frame for the demo
+     * @param manageResize true if you want the base class to manage the resize events, false
+     *    if you want to do it yourself (eg you have a custom animator in use)
+     * @param culler The cull implementation to use. If null will use the default NullCullStage
+     * @param sorter The sort implementation to use. If null will use the default NullSortStage
+     */
     protected BaseDemoFrame(String title, GraphicsCullStage culler, GraphicsSortStage sorter, boolean manageResize) {
         super(title);
 
@@ -144,6 +153,16 @@ public abstract class BaseDemoFrame extends JFrame
 
     private void setupAviatrix(GraphicsCullStage culler, GraphicsSortStage sorter, boolean handleResize)
     {
+        if(culler == null)
+        {
+            culler = new NullCullStage();
+        }
+
+        if(sorter == null)
+        {
+            sorter = new NullSortStage();
+        }
+
         // Assemble a simple single-threaded pipeline.
         GraphicsRenderingCapabilities caps = new GraphicsRenderingCapabilities();
 
@@ -151,6 +170,7 @@ public abstract class BaseDemoFrame extends JFrame
 
         surface = new DebugAWTSurface(caps);
         surface.setClearColor(0.3f, 0.3f, 0.3f, 1);
+        surface.addGraphicsResizeListener(resizeManager);
 
         DefaultGraphicsPipeline pipeline = new DefaultGraphicsPipeline();
 
@@ -170,13 +190,46 @@ public abstract class BaseDemoFrame extends JFrame
         {
             ApplicationUpdateObserver obs = new ResizeUpdater(resizeManager);
             sceneManager.setApplicationObserver(obs);
-            surface.addGraphicsResizeListener(resizeManager);
         }
 
         // Before putting the pipeline into run mode, put the canvas on
         // screen first.
         Component comp = (Component)surface.getSurfaceObject();
         add(comp, BorderLayout.CENTER);
+    }
+
+    /**
+     * Convenience method to load an image from a file that is
+     * located in the classpath somewhere.
+     *
+     * @param filename The file name to load. If relative, searches the classpath
+     * @return The loaded image or null if there were any problems
+     */
+    protected BufferedImage loadImage(String filename)
+    {
+        BufferedImage  ret_val = null;
+
+        try
+        {
+            File f = DataUtils.lookForFile(filename, getClass(), null);
+
+            if(f == null)
+            {
+                System.out.println("Can't find texture source file");
+                return null;
+            }
+
+            FileInputStream is = new FileInputStream(f);
+
+            BufferedInputStream stream = new BufferedInputStream(is);
+            ret_val = ImageIO.read(stream);
+        }
+        catch(IOException ioe)
+        {
+            System.out.println("Error reading image: " + ioe);
+        }
+
+        return ret_val;
     }
 
     /**
@@ -192,49 +245,31 @@ public abstract class BaseDemoFrame extends JFrame
         int img_width = 0;
         int img_height = 0;
 
-        try
+        BufferedImage img = loadImage(filename);
+
+        img_width = img.getWidth(null);
+        img_height = img.getHeight(null);
+        int format = TextureComponent.FORMAT_RGB;
+
+        switch (img.getType())
         {
-            File f = DataUtils.lookForFile(filename, getClass(), null);
-            if(f == null)
-            {
-                System.out.println("Can't find texture source file");
-            }
-            else
-            {
-                FileInputStream is = new FileInputStream(f);
+            case BufferedImage.TYPE_3BYTE_BGR:
+            case BufferedImage.TYPE_CUSTOM:
+            case BufferedImage.TYPE_INT_RGB:
+                System.out.println("TD RGB");
+                break;
 
-                BufferedInputStream stream = new BufferedInputStream(is);
-                BufferedImage img = ImageIO.read(stream);
-
-                img_width = img.getWidth(null);
-                img_height = img.getHeight(null);
-                int format = TextureComponent.FORMAT_RGB;
-
-                switch (img.getType())
-                {
-                    case BufferedImage.TYPE_3BYTE_BGR:
-                    case BufferedImage.TYPE_CUSTOM:
-                    case BufferedImage.TYPE_INT_RGB:
-                        System.out.println("TD RGB");
-                        break;
-
-                    case BufferedImage.TYPE_4BYTE_ABGR:
-                    case BufferedImage.TYPE_INT_ARGB:
-                        System.out.println("TD RGBA");
-                        format = TextureComponent.FORMAT_RGBA;
-                        break;
-                }
-
-                img_comp = new ImageTextureComponent2D(format,
-                                                       img_width,
-                                                       img_height,
-                                                       img);
-            }
+            case BufferedImage.TYPE_4BYTE_ABGR:
+            case BufferedImage.TYPE_INT_ARGB:
+                System.out.println("TD RGBA");
+                format = TextureComponent.FORMAT_RGBA;
+                break;
         }
-        catch(IOException ioe)
-        {
-            System.out.println("Error reading image: " + ioe);
-        }
+
+        img_comp = new ImageTextureComponent2D(format,
+                                               img_width,
+                                               img_height,
+                                               img);
 
         return img_comp;
     }
