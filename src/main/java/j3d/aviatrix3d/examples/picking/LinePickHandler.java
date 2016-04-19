@@ -3,6 +3,7 @@ package j3d.aviatrix3d.examples.picking;
 // External imports
 import org.j3d.maths.vector.Matrix4d;
 import org.j3d.maths.vector.Vector3d;
+import org.j3d.renderer.aviatrix3d.pipeline.ViewportResizeManager;
 
 // Local imports
 import org.j3d.aviatrix3d.*;
@@ -43,12 +44,15 @@ public class LinePickHandler
     /** The material used for changing colours depending on pick state */
     private Material material;
 
+    private ViewportResizeManager resizeManager;
+
     /**
      * Create a new handler for the LinePickDemo application that uses the
      * given transform group as input to the picking system.
      */
-    public LinePickHandler(Group root, TransformGroup tx, Material mat)
+    public LinePickHandler(Group root, TransformGroup tx, Material mat, ViewportResizeManager resizer)
     {
+        resizeManager = resizer;
         pickRoot = root;
         material = mat;
         translation = new Vector3d();
@@ -83,6 +87,7 @@ public class LinePickHandler
      */
     public void updateSceneGraph()
     {
+        resizeManager.sendResizeUpdates();
 /*
         if(++counter == 100)
         {

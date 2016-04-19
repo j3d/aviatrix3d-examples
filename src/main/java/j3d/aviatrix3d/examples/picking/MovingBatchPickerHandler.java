@@ -3,6 +3,7 @@ package j3d.aviatrix3d.examples.picking;
 // External imports
 import org.j3d.maths.vector.Matrix4d;
 import org.j3d.maths.vector.Vector3d;
+import org.j3d.renderer.aviatrix3d.pipeline.ViewportResizeManager;
 
 // Local imports
 import org.j3d.aviatrix3d.*;
@@ -53,6 +54,8 @@ public class MovingBatchPickerHandler
     /** The material used for changing colours depending on pick state */
     private Material pointMaterial;
 
+    private ViewportResizeManager resizeManager;
+
     /**
      * Create a new handler for the MovingBatchPickerPick application that uses the
      * given lineTransform group as input to the picking system.
@@ -61,8 +64,10 @@ public class MovingBatchPickerHandler
                                     TransformGroup tx1,
                                     TransformGroup tx2,
                                     Material mat1,
-                                    Material mat2)
+                                    Material mat2,
+                                    ViewportResizeManager resizer)
     {
+        resizeManager = resizer;
         pickRoot = root;
         lineMaterial = mat1;
         pointMaterial = mat2;
@@ -107,6 +112,7 @@ public class MovingBatchPickerHandler
      */
     public void updateSceneGraph()
     {
+        resizeManager.sendResizeUpdates();
 /*
         if(++counter == 100)
         {
@@ -118,7 +124,7 @@ public class MovingBatchPickerHandler
             counter = 0;
         }
 */
-        angle += Math.PI / 700;
+        angle += Math.PI / 350;
         float x = 0.175f * (float)Math.sin(angle);
         float y = 0.175f * (float)Math.cos(angle);
         translation.x = x;

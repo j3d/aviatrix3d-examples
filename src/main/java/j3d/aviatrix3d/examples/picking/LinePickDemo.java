@@ -4,6 +4,7 @@ package j3d.aviatrix3d.examples.picking;
 import java.awt.*;
 import java.awt.event.*;
 
+import j3d.aviatrix3d.examples.basic.BaseDemoFrame;
 import org.j3d.maths.vector.Matrix4d;
 import org.j3d.maths.vector.Vector3d;
 
@@ -30,75 +31,15 @@ import org.j3d.geom.BoxGenerator;
  * @author Justin Couch
  * @version $Revision: 1.10 $
  */
-public class LinePickDemo extends Frame
-    implements WindowListener
+public class LinePickDemo extends BaseDemoFrame
 {
-    /** Manager for the scene graph handling */
-    private SingleThreadRenderManager sceneManager;
-
-    /** Manager for the layers etc */
-    private SingleDisplayCollection displayManager;
-
-    /** Our drawing surface */
-    private GraphicsOutputDevice surface;
-
-
     public LinePickDemo()
     {
-        super("Aviatrix Simple Picking Demo");
-
-        setLayout(new BorderLayout());
-        addWindowListener(this);
-
-        setupAviatrix();
-        setupSceneGraph();
-
-        setSize(600, 600);
-        setLocation(40, 40);
-
-        // Need to set visible first before starting the rendering thread due
-        // to a bug in JOGL. See JOGL Issue #54 for more information on this.
-        // http://jogl.dev.java.net
-        setVisible(true);
+        super("Aviatrix Simple Picking Demo", false);
     }
 
-    /**
-     * Setup the avaiatrix pipeline here
-     */
-    private void setupAviatrix()
-    {
-        // Assemble a simple single-threaded pipeline.
-        GraphicsRenderingCapabilities caps = new GraphicsRenderingCapabilities();
-
-        GraphicsCullStage culler = new NullCullStage();
-        culler.setOffscreenCheckEnabled(false);
-
-        GraphicsSortStage sorter = new NullSortStage();
-        surface = new DebugAWTSurface(caps);
-        DefaultGraphicsPipeline pipeline = new DefaultGraphicsPipeline();
-
-        pipeline.setCuller(culler);
-        pipeline.setSorter(sorter);
-        pipeline.setGraphicsOutputDevice(surface);
-
-        displayManager = new SingleDisplayCollection();
-        displayManager.addPipeline(pipeline);
-
-        // Render manager
-        sceneManager = new SingleThreadRenderManager();
-        sceneManager.addDisplay(displayManager);
-        sceneManager.setMinimumFrameInterval(100);
-
-        // Before putting the pipeline into run mode, put the canvas on
-        // screen first.
-        Component comp = (Component)surface.getSurfaceObject();
-        add(comp, BorderLayout.CENTER);
-    }
-
-    /**
-     * Setup the basic scene which consists of a quad and a viewpoint
-     */
-    private void setupSceneGraph()
+    @Override
+    protected void setupSceneGraph()
     {
         // View group
 
@@ -194,7 +135,6 @@ public class LinePickDemo extends Frame
         shape_transform.addChild(shape);
         shape_transform.setTransform(mat2);
 
-//
         data = new GeometryData();
         data.geometryType = GeometryData.QUADS;
         data.geometryComponents = GeometryData.NORMAL_DATA;
@@ -217,7 +157,6 @@ public class LinePickDemo extends Frame
         Shape3D shape_2 = new Shape3D();
         shape_2.setGeometry(geom_2);
         shape_2.setAppearance(app_2);
-//
 
         trans.set(0.25f, 0.25f, 0);
         mat2.setTranslation(trans);
@@ -230,9 +169,8 @@ public class LinePickDemo extends Frame
         scene_root.addChild(shape_transform_2);
 
 
-        LinePickHandler anim = new LinePickHandler(scene_root,
-                                                     shape_transform,
-                                                     material);
+        LinePickHandler anim =
+            new LinePickHandler(scene_root, shape_transform, material, resizeManager);
 
         // Place a point object where the picker is
         float[] coords = new float[6];
@@ -265,6 +203,7 @@ public class LinePickDemo extends Frame
         SimpleViewport view = new SimpleViewport();
         view.setDimensions(0, 0, 500, 500);
         view.setScene(scene);
+        resizeManager.addManagedViewport(view);
 
         SimpleLayer layer = new SimpleLayer();
         layer.setViewport(view);
@@ -275,69 +214,12 @@ public class LinePickDemo extends Frame
     }
 
     //---------------------------------------------------------------
-    // Methods defined by WindowListener
-    //---------------------------------------------------------------
-
-    /**
-     * Ignored
-     */
-    public void windowActivated(WindowEvent evt)
-    {
-    }
-
-    /**
-     * Ignored
-     */
-    public void windowClosed(WindowEvent evt)
-    {
-    }
-
-    /**
-     * Exit the application
-     *
-     * @param evt The event that caused this method to be called.
-     */
-    public void windowClosing(WindowEvent evt)
-    {
-        sceneManager.shutdown();
-        System.exit(0);
-    }
-
-    /**
-     * Ignored
-     */
-    public void windowDeactivated(WindowEvent evt)
-    {
-    }
-
-    /**
-     * Ignored
-     */
-    public void windowDeiconified(WindowEvent evt)
-    {
-    }
-
-    /**
-     * Ignored
-     */
-    public void windowIconified(WindowEvent evt)
-    {
-    }
-
-    /**
-     * When the window is opened, start everything up.
-     */
-    public void windowOpened(WindowEvent evt)
-    {
-        sceneManager.setEnabled(true);
-    }
-
-    //---------------------------------------------------------------
     // Local methods
     //---------------------------------------------------------------
 
     public static void main(String[] args)
     {
         LinePickDemo demo = new LinePickDemo();
+        demo.setVisible(true);
     }
 }
