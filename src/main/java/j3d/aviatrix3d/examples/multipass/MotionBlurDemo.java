@@ -101,7 +101,7 @@ public class MotionBlurDemo extends Frame
     /**
      * Setup the basic scene which consists of a quad and a viewpoint
      */
-    private void setupSceneGraph()
+    protected void setupSceneGraph()
     {
         // Transform group for each pass
         TransformGroup[] shape_movers = new TransformGroup[NUM_PASSES];

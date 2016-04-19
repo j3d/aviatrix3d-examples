@@ -1,37 +1,16 @@
 package j3d.aviatrix3d.examples.texture;
 
 // Standard imports
-
-import java.awt.*;
-import java.awt.event.*;
-
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
-import java.io.FileInputStream;
-import java.io.BufferedInputStream;
-
-import javax.imageio.ImageIO;
-
 import org.j3d.maths.vector.Matrix4d;
 import org.j3d.maths.vector.Vector3d;
 
 // Application Specific imports
 import org.j3d.aviatrix3d.*;
 
-import org.j3d.aviatrix3d.output.graphics.DebugAWTSurface;
-import org.j3d.aviatrix3d.pipeline.graphics.GraphicsCullStage;
-import org.j3d.aviatrix3d.pipeline.graphics.DefaultGraphicsPipeline;
-import org.j3d.aviatrix3d.pipeline.graphics.GraphicsOutputDevice;
-import org.j3d.aviatrix3d.pipeline.graphics.NullCullStage;
-import org.j3d.aviatrix3d.pipeline.graphics.NullSortStage;
-import org.j3d.aviatrix3d.pipeline.graphics.GraphicsSortStage;
-import org.j3d.aviatrix3d.management.SingleThreadRenderManager;
-import org.j3d.aviatrix3d.management.SingleDisplayCollection;
+import j3d.aviatrix3d.examples.basic.BaseDemoFrame;
 
 import org.j3d.geom.GeometryData;
 import org.j3d.geom.SphereGenerator;
-import org.j3d.util.DataUtils;
 
 /**
  * Example application that demonstrates how to put together a single-threaded
@@ -40,78 +19,15 @@ import org.j3d.util.DataUtils;
  * @author Justin Couch
  * @version $Revision: 1.14 $
  */
-public class CubeMapDemo extends Frame
-        implements WindowListener
+public class CubeMapDemo extends BaseDemoFrame
 {
-    /** Manager for the scene graph handling */
-    private SingleThreadRenderManager sceneManager;
-
-    /** Manager for the layers etc */
-    private SingleDisplayCollection displayManager;
-
-    /** Our drawing surface */
-    private GraphicsOutputDevice surface;
-
     public CubeMapDemo()
     {
         super("Aviatrix Cubic Environment Map Demo");
-
-        setLayout(new BorderLayout());
-        addWindowListener(this);
-
-        setupAviatrix();
-        setupSceneGraph();
-
-        setSize(600, 600);
-        setLocation(40, 40);
-
-        // Need to set visible first before starting the rendering thread due
-        // to a bug in JOGL. See JOGL Issue #54 for more information on this.
-        // http://jogl.dev.java.net
-        setVisible(true);
     }
 
-    /**
-     * Setup the avaiatrix pipeline here
-     */
-    private void setupAviatrix()
-    {
-        // Assemble a simple single-threaded pipeline.
-        GraphicsRenderingCapabilities caps = new GraphicsRenderingCapabilities();
-
-        GraphicsCullStage culler = new NullCullStage();
-        culler.setOffscreenCheckEnabled(false);
-
-        GraphicsSortStage sorter = new NullSortStage();
-        surface = new DebugAWTSurface(caps);
-        ((DebugAWTSurface) surface).checkForExtension("GL_ARB_texture_cube_map");
-        DefaultGraphicsPipeline pipeline = new DefaultGraphicsPipeline();
-
-        pipeline.setCuller(culler);
-        pipeline.setSorter(sorter);
-        pipeline.setGraphicsOutputDevice(surface);
-
-        displayManager = new SingleDisplayCollection();
-        displayManager.addPipeline(pipeline);
-
-        // Render manager
-        sceneManager = new SingleThreadRenderManager();
-        sceneManager.addDisplay(displayManager);
-        sceneManager.setMinimumFrameInterval(100);
-
-        // Before putting the pipeline into run mode, put the canvas on
-        // screen first.
-        Component comp = (Component) surface.getSurfaceObject();
-        add(comp, BorderLayout.CENTER);
-
-        Button b = new Button("Press me");
-        add(b, BorderLayout.SOUTH);
-    }
-
-    /**
-     * Setup the basic scene which consists of a quad and a viewpoint
-     */
-    private void setupSceneGraph()
+    @Override
+    protected void setupSceneGraph()
     {
         // Load the texture image
         TextureComponent2D[] img_sides = new TextureComponent2D[6];
@@ -127,7 +43,7 @@ public class CubeMapDemo extends Frame
         };
 
         for (int i = 0; i < 6; i++)
-            img_sides[i] = loadImage(targets[i]);
+            img_sides[i] = loadTexture(targets[i]);
 
         // View group
         Viewpoint vp = new Viewpoint();
@@ -226,6 +142,8 @@ public class CubeMapDemo extends Frame
         view.setDimensions(0, 0, 500, 500);
         view.setScene(scene);
 
+        resizeManager.addManagedViewport(view);
+
         SimpleLayer layer = new SimpleLayer();
         layer.setViewport(view);
 
@@ -234,117 +152,8 @@ public class CubeMapDemo extends Frame
     }
 
     //---------------------------------------------------------------
-    // Methods defined by WindowListener
-    //---------------------------------------------------------------
-
-    /**
-     * Ignored
-     */
-    public void windowActivated(WindowEvent evt)
-    {
-    }
-
-    /**
-     * Ignored
-     */
-    public void windowClosed(WindowEvent evt)
-    {
-    }
-
-    /**
-     * Exit the application
-     *
-     * @param evt The event that caused this method to be called.
-     */
-    public void windowClosing(WindowEvent evt)
-    {
-        sceneManager.shutdown();
-        System.exit(0);
-    }
-
-    /**
-     * Ignored
-     */
-    public void windowDeactivated(WindowEvent evt)
-    {
-    }
-
-    /**
-     * Ignored
-     */
-    public void windowDeiconified(WindowEvent evt)
-    {
-    }
-
-    /**
-     * Ignored
-     */
-    public void windowIconified(WindowEvent evt)
-    {
-    }
-
-    /**
-     * When the window is opened, start everything up.
-     */
-    public void windowOpened(WindowEvent evt)
-    {
-        sceneManager.setEnabled(true);
-    }
-
-    //---------------------------------------------------------------
     // Local methods
     //---------------------------------------------------------------
-
-    /**
-     * Load a single image
-     */
-    private TextureComponent2D loadImage(String name)
-    {
-        TextureComponent2D img_comp = null;
-
-        try
-        {
-            File file = DataUtils.lookForFile(name, getClass(), null);
-            if(file == null)
-            {
-                System.out.println("Can't find texture source file");
-                return null;
-            }
-
-            FileInputStream is = new FileInputStream(file);
-
-            BufferedInputStream stream = new BufferedInputStream(is);
-            BufferedImage img = ImageIO.read(stream);
-
-            int img_width = img.getWidth(null);
-            int img_height = img.getHeight(null);
-            int format = TextureComponent.FORMAT_RGB;
-
-            switch (img.getType())
-            {
-                case BufferedImage.TYPE_3BYTE_BGR:
-                case BufferedImage.TYPE_CUSTOM:
-                case BufferedImage.TYPE_INT_RGB:
-                    break;
-
-                case BufferedImage.TYPE_4BYTE_ABGR:
-                case BufferedImage.TYPE_INT_ARGB:
-                    format = TextureComponent.FORMAT_RGBA;
-                    break;
-            }
-
-            img_comp = new ImageTextureComponent2D(format,
-                                                   img_width,
-                                                   img_height,
-                                                   img);
-        }
-        catch (IOException ioe)
-        {
-            System.out.println("Error reading image: " + ioe);
-        }
-
-        return img_comp;
-    }
 
     public static void main(String[] args)
     {

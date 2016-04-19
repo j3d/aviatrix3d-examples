@@ -94,6 +94,8 @@ import org.j3d.renderer.aviatrix3d.geom.*;
  * /                          \
  * ----------------------------
  *
+ * FIXME
+ *
  * @author Sang Park
  * @version $Revision: 1.8 $
  */
@@ -101,19 +103,10 @@ public class ShadowMappingDemo extends JFrame
         implements WindowListener
 {
 
-    /**
-     * Panel that consists of aviatrix3d scene on the left side
-     * and java panel on the right side
-     */
-    private JPanel mainPanel;
-
-    /** Panel that contains editable GUIs */
-    private JPanel editorPanel;
-
     // Before putting the pipeline into run mode, put the canvas on
     // screen first.
     /** Surface containing aviatrx3d scene */
-    protected Component sceneSurfaceComp;
+    private Component sceneSurfaceComp;
 
     // Color settings
     // ----------------------------------------------------
@@ -190,9 +183,6 @@ public class ShadowMappingDemo extends JFrame
     /** TG of the light look at position from light's point of view */
     private TransformGroup lightLookAtFromLight;
 
-    /** TG of the camera's look at position from camera's point of view */
-    private TransformGroup lightLookAtFromCamera;
-
     /** Geometry that represent light */
     private Cone lightCone;
 
@@ -228,8 +218,6 @@ public class ShadowMappingDemo extends JFrame
     {
         super("Shadow Mapping Demo");
 
-        mainPanel = new JPanel();
-
         setSize(640, 480);
         setLocation(40, 40);
 
@@ -237,9 +225,6 @@ public class ShadowMappingDemo extends JFrame
         sceneSurfaceComp.setPreferredSize(new Dimension(640, 480));
 
         setupSceneGraph();
-
-        //mainPanel.add(sceneSurfaceComp, BorderLayout.WEST);
-        //mainPanel.add(editorPanel, BorderLayout.EAST);
 
         add(sceneSurfaceComp);
 
@@ -342,7 +327,6 @@ public class ShadowMappingDemo extends JFrame
         cameraInverseTransform = new Matrix4d();
 
         lightLookAtFromLight = new TransformGroup();
-        lightLookAtFromCamera = new TransformGroup();
 
         Vector3d trans = new Vector3d();
         trans.set(0, 1, 0);
@@ -450,7 +434,7 @@ public class ShadowMappingDemo extends JFrame
      * @return SimpleScene containing a scene that is rendered
      * from the light's point of view
      */
-    SimpleScene setupFirstPassScene()
+    private SimpleScene setupFirstPassScene()
     {
 
         SimpleScene pass = new SimpleScene();

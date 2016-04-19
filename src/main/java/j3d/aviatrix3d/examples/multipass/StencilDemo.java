@@ -97,7 +97,7 @@ public class StencilDemo extends Frame
     /**
      * Setup the basic scene which consists of a quad and a viewpoint
      */
-    private void setupSceneGraph()
+    protected void setupSceneGraph()
     {
         // The first render pass sets up the stencil values in the buffer. It
         // consists of an ortho viewpoint to draw a diamond in the middle of

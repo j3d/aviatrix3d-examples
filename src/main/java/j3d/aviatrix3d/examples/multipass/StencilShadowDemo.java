@@ -140,7 +140,7 @@ public class StencilShadowDemo extends Frame
     /**
      * Setup the basic scene which consists of a quad and a viewpoint
      */
-    private void setupSceneGraph()
+    protected void setupSceneGraph()
     {
     	// Set all multipass scenes.
         MultipassScene mainScene = new MultipassScene();

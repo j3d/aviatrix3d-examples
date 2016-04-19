@@ -5,6 +5,8 @@ package j3d.aviatrix3d.examples.texture;
 
 // Application Specific imports
 
+import org.j3d.renderer.aviatrix3d.pipeline.ViewportResizeManager;
+
 import org.j3d.aviatrix3d.*;
 
 /**
@@ -23,59 +25,64 @@ class TextureUpdater
 {
     // Simple texture source to see the output
     private static final byte[] TEX_UPDATE_DATA =
-            {
-                    (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0,
-                    (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0,
-                    (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0,
-                    (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0,
-                    (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0,
-                    (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0,
-                    (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0,
-                    (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0,
-                    (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF,
-                    (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF,
-                    (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF,
-                    (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF,
-                    (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF,
-                    (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF,
-                    (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF,
-                    (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF,
-                    (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0,
-                    (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0,
-                    (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0,
-                    (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0,
-                    (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0,
-                    (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0,
-                    (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0,
-                    (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0,
-                    (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF,
-                    (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF,
-                    (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF,
-                    (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF,
-                    (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF,
-                    (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF,
-                    (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF,
-                    (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF,
-            };
+    {
+        (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0,
+        (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0,
+        (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0,
+        (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0,
+        (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0,
+        (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0,
+        (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0,
+        (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0,
+        (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF,
+        (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF,
+        (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF,
+        (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF,
+        (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF,
+        (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF,
+        (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF,
+        (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF,
+        (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0,
+        (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0,
+        (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0,
+        (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0,
+        (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0,
+        (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0,
+        (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0,
+        (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0,
+        (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF,
+        (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF,
+        (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF,
+        (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF,
+        (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF,
+        (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF,
+        (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF,
+        (byte) 0, (byte) 0, (byte) 0xFF, (byte) 0, (byte) 0, (byte) 0xFF,
+    };
 
     /** The scene graph node to update */
     private ByteTextureComponent2D texSource;
 
     /** Current X location of last update */
-    private int xLoc;
+    private final int xSizeInPixels;
 
     /** Current X location of last update */
-    private int yLoc;
+    private final int ySizeInPixels;
 
     /** Have we updated already? */
     private int updateCount;
 
+    private ViewportResizeManager resizeManager;
+
     /**
      *
      */
-    public TextureUpdater(ByteTextureComponent2D source)
+    public TextureUpdater(int xSize, int ySize, ByteTextureComponent2D source, ViewportResizeManager resizer)
     {
+        resizeManager = resizer;
         texSource = source;
+        xSizeInPixels = xSize;
+        ySizeInPixels = ySize;
         updateCount = 0;
     }
 
@@ -88,7 +95,8 @@ class TextureUpdater
      */
     public void updateSceneGraph()
     {
-        if (++updateCount == 3)
+        resizeManager.sendResizeUpdates();
+        if ((++updateCount % 10) == 0)
         {
             texSource.dataChanged(this);
         }
@@ -127,6 +135,9 @@ class TextureUpdater
      */
     public void updateNodeDataChanges(Object src)
     {
-        texSource.updateSubImage(5, 5, 8, 8, 0, TEX_UPDATE_DATA);
+        int x_pos = (int)(Math.random() * xSizeInPixels);
+        int y_pos = (int)(Math.random() * ySizeInPixels);
+System.out.println("new pos " + x_pos + ", " + y_pos);
+        texSource.updateSubImage(x_pos, y_pos, 8, 8, 0, TEX_UPDATE_DATA);
     }
 }
