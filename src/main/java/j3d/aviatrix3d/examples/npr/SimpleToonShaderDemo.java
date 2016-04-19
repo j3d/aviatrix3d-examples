@@ -8,6 +8,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 
+import j3d.aviatrix3d.examples.basic.BaseDemoFrame;
 import org.j3d.maths.vector.Matrix4d;
 import org.j3d.maths.vector.Vector3d;
 
@@ -32,8 +33,7 @@ import org.j3d.geom.SphereGenerator;
  * @author Justin Couch
  * @version $Revision: 1.2 $
  */
-public class SimpleToonShaderDemo extends Frame
-    implements WindowListener
+public class SimpleToonShaderDemo extends BaseDemoFrame
 {
     /** App name to register preferences under */
     private static final String APP_NAME = "examples.SimpleToonShaderDemo";
@@ -46,85 +46,22 @@ public class SimpleToonShaderDemo extends Frame
     private static final String FRAG_SHADER_FILE =
         "shaders/examples/npr/SimpleToonFrag.glsl";
 
-    /** Manager for the scene graph handling */
-    private SingleThreadRenderManager sceneManager;
-
-    /** Manager for the layers etc */
-    private SingleDisplayCollection displayManager;
-
-    /** Our drawing surface */
-    private GraphicsOutputDevice surface;
-
-    /** The shader for vertex section */
-    private VertexShader vtxShader;
-
-    /** The shader for fragment processing */
-    private FragmentShader fragShader;
-
     /**
      * Construct a new shader demo instance.
      */
     public SimpleToonShaderDemo()
     {
-        super("Toon Shader Demo");
+        super("Toon Shader Demo",
+              new FrustumCullStage(),
+              new StateAndTransparencyDepthSortStage(),
+              false);
 
         I18nManager intl_mgr = I18nManager.getManager();
         intl_mgr.setApplication(APP_NAME, "config.i18n.org-j3d-aviatrix3d-resources-core");
-
-        setLayout(new BorderLayout());
-        addWindowListener(this);
-
-        setupAviatrix();
-        setupSceneGraph();
-
-        setSize(600, 600);
-        setLocation(40, 40);
-
-        // Need to set visible first before starting the rendering thread due
-        // to a bug in JOGL. See JOGL Issue #54 for more information on this.
-        // http://jogl.dev.java.net
-        setVisible(true);
     }
 
-    /**
-     * Setup the avaiatrix pipeline here
-     */
-    private void setupAviatrix()
-    {
-        // Assemble a simple single-threaded pipeline.
-        GraphicsRenderingCapabilities caps = new GraphicsRenderingCapabilities();
-
-        GraphicsCullStage culler = new FrustumCullStage();
-        culler.setOffscreenCheckEnabled(false);
-
-        GraphicsSortStage sorter = new StateAndTransparencyDepthSortStage();
-        surface = new DebugAWTSurface(caps);
-//        surface = new SimpleAWTSurface(caps);
-        surface.setClearColor(0.8f, 0.8f, 0.8f, 1);
-        DefaultGraphicsPipeline pipeline = new DefaultGraphicsPipeline();
-
-        pipeline.setCuller(culler);
-        pipeline.setSorter(sorter);
-        pipeline.setGraphicsOutputDevice(surface);
-
-        displayManager = new SingleDisplayCollection();
-        displayManager.addPipeline(pipeline);
-
-        // Render manager
-        sceneManager = new SingleThreadRenderManager();
-        sceneManager.addDisplay(displayManager);
-        sceneManager.setMinimumFrameInterval(100);
-
-        // Before putting the pipeline into run mode, put the canvas on
-        // screen first.
-        Component comp = (Component)surface.getSurfaceObject();
-        add(comp, BorderLayout.CENTER);
-    }
-
-    /**
-     * Setup the basic scene which consists of a quad and a viewpoint
-     */
-    private void setupSceneGraph()
+    @Override
+    protected void setupSceneGraph()
     {
         // View group
         Viewpoint vp = new Viewpoint();
@@ -226,6 +163,7 @@ public class SimpleToonShaderDemo extends Frame
         SimpleViewport view = new SimpleViewport();
         view.setDimensions(0, 0, 500, 500);
         view.setScene(scene);
+        resizeManager.addManagedViewport(view);
 
         SimpleLayer layer = new SimpleLayer();
         layer.setViewport(view);
@@ -237,7 +175,8 @@ public class SimpleToonShaderDemo extends Frame
             new SimpleToonCallback(light_tx,
                                    vert_shader,
                                    frag_shader,
-                                   shader_prog);
+                                   shader_prog,
+                                   resizeManager);
         sceneManager.setApplicationObserver(stc);
 
     }

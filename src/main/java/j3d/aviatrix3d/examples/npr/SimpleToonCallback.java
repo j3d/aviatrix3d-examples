@@ -3,6 +3,7 @@ package j3d.aviatrix3d.examples.npr;
 // External imports
 import org.j3d.maths.vector.Matrix4d;
 import org.j3d.maths.vector.Vector3d;
+import org.j3d.renderer.aviatrix3d.pipeline.ViewportResizeManager;
 
 // Local imports
 import org.j3d.aviatrix3d.*;
@@ -40,6 +41,7 @@ public class SimpleToonCallback
     /** Matrix used to update the transform */
     private Matrix4d matrix;
 
+    private ViewportResizeManager resizeManager;
 
     /**
      *
@@ -47,8 +49,10 @@ public class SimpleToonCallback
     public SimpleToonCallback(TransformGroup lightTx,
                          ShaderObject vert,
                          ShaderObject frag,
-                         ShaderProgram comp)
+                         ShaderProgram comp,
+                         ViewportResizeManager resizer)
     {
+        resizeManager = resizer;
         lightTransform = lightTx;
         vertShader = vert;
         fragShader = frag;
@@ -68,6 +72,7 @@ public class SimpleToonCallback
      */
     public void updateSceneGraph()
     {
+        resizeManager.sendResizeUpdates();
         if(frameCount == 4)
         {
             System.out.println("frag log " + vertShader.getLastInfoLog());
