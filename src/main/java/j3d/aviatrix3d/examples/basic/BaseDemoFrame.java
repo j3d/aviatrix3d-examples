@@ -151,6 +151,23 @@ public abstract class BaseDemoFrame extends JFrame
      */
     protected abstract void setupSceneGraph();
 
+    /**
+     * Overridable method to change the requested capabilities when needed for
+     * a specific demo. Most Demos don't need to worry about overriding as the
+     * defaults are good enough.
+     *
+     * @return A configured capabilities object
+     */
+    protected GraphicsRenderingCapabilities getCapabilities()
+    {
+        return new GraphicsRenderingCapabilities();
+    }
+
+    /**
+     * @param culler
+     * @param sorter
+     * @param handleResize
+     */
     private void setupAviatrix(GraphicsCullStage culler, GraphicsSortStage sorter, boolean handleResize)
     {
         if(culler == null)
@@ -164,7 +181,7 @@ public abstract class BaseDemoFrame extends JFrame
         }
 
         // Assemble a simple single-threaded pipeline.
-        GraphicsRenderingCapabilities caps = new GraphicsRenderingCapabilities();
+        GraphicsRenderingCapabilities caps = getCapabilities();
 
         culler.setOffscreenCheckEnabled(false);
 
