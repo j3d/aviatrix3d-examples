@@ -38,6 +38,7 @@ import org.j3d.util.DataUtils;
  *
  * @author Justin Couch
  * @version $Revision: 1.16 $
+ * @Deprecated Uses GL14 shaders, which need to be converted
  */
 public class BasicShaderDemo extends Frame
     implements WindowListener

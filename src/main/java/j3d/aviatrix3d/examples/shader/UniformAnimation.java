@@ -1,6 +1,7 @@
 package j3d.aviatrix3d.examples.shader;
 
 // Standard imports
+import org.j3d.renderer.aviatrix3d.pipeline.ViewportResizeManager;
 import org.j3d.util.interpolator.ColorInterpolator;
 
 // Application Specific imports
@@ -31,12 +32,15 @@ public class UniformAnimation
     /** Start of the cycle time */
     private long cycleStartTime;
 
+    private ViewportResizeManager resizeManager;
+
     /**
      *
      */
-    public UniformAnimation(ShaderArguments args)
+    public UniformAnimation(ShaderArguments args, ViewportResizeManager resizer)
     {
         shaderArgs = args;
+        resizeManager = resizer;
         interpolator = new ColorInterpolator();
         interpolator.addRGBKeyFrame(0, 1, 0.3f, 0.2f, 0);
         interpolator.addRGBKeyFrame(0.5f, 0, 0.3f, 0.2f, 0);
@@ -53,6 +57,7 @@ public class UniformAnimation
      */
     public void updateSceneGraph()
     {
+        resizeManager.sendResizeUpdates();
         long curr_time = System.currentTimeMillis();
         long elapsed = (curr_time - cycleStartTime);
         if(elapsed > CYCLE_INTERVAL)

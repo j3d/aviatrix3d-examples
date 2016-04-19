@@ -18,10 +18,7 @@ import java.awt.*;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.awt.image.BufferedImage;
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
+import java.io.*;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -289,5 +286,43 @@ public abstract class BaseDemoFrame extends JFrame
                                                img);
 
         return img_comp;
+    }
+
+    /**
+     * Load the shader file. Find it relative to the classpath.
+     *
+     * @param name THe name of the file to load
+     */
+    protected String[] loadShaderFile(String name)
+    {
+        File file = DataUtils.lookForFile(name, getClass(), null);
+        if(file == null)
+        {
+            System.out.println("Cannot find file " + name);
+            return null;
+        }
+
+        String ret_val = null;
+
+        try
+        {
+            FileReader is = new FileReader(file);
+            StringBuffer buf = new StringBuffer();
+            char[] read_buf = new char[1024];
+            int num_read = 0;
+
+            while((num_read = is.read(read_buf, 0, 1024)) != -1)
+                buf.append(read_buf, 0, num_read);
+
+            is.close();
+
+            ret_val = buf.toString();
+        }
+        catch(IOException ioe)
+        {
+            System.out.println("I/O error " + ioe);
+        }
+
+        return new String[] { ret_val };
     }
 }

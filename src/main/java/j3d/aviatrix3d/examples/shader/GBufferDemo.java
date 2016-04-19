@@ -1,33 +1,16 @@
 package j3d.aviatrix3d.examples.shader;
 
 // External imports
-import java.awt.*;
-import java.awt.event.*;
-
-import java.awt.image.BufferedImage;
-
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileReader;
-import java.io.IOException;
-
-import javax.imageio.ImageIO;
-
 import org.j3d.maths.vector.Matrix4d;
 import org.j3d.maths.vector.Vector3d;
 
-import org.j3d.util.DataUtils;
 import org.j3d.util.I18nManager;
 
 // Local imports
 import org.j3d.aviatrix3d.*;
 import org.j3d.aviatrix3d.pipeline.graphics.*;
 
-import org.j3d.aviatrix3d.output.graphics.DebugAWTSurface;
-import org.j3d.aviatrix3d.management.SingleThreadRenderManager;
-import org.j3d.aviatrix3d.management.SingleDisplayCollection;
-
+import j3d.aviatrix3d.examples.basic.BaseDemoFrame;
 import org.j3d.geom.GeometryData;
 import org.j3d.geom.SphereGenerator;
 import org.j3d.util.MatrixUtils;
@@ -38,11 +21,12 @@ import org.j3d.util.TriangleUtils;
  * targets.
  * <p>
  *
+ * FIXME
+ *
  * @author Justin Couch
  * @version $Revision: 1.3 $
  */
-public class GBufferDemo extends Frame
-    implements WindowListener
+public class GBufferDemo extends BaseDemoFrame
 {
     /** App name to register preferences under */
     private static final String APP_NAME = "GBufferDemo";
@@ -72,151 +56,25 @@ public class GBufferDemo extends Frame
     /** PI / 4 for rotations */
     private static final float PI_4 = (float)(Math.PI * 0.25f);
 
-    /** Manager for the scene graph handling */
-    private SingleThreadRenderManager sceneManager;
-
-    /** Manager for the layers etc */
-    private SingleDisplayCollection displayManager;
-
-    /** Our drawing surface */
-    private GraphicsOutputDevice surface;
-
     /** The view environment created for the main scene */
     private ViewEnvironment mainSceneEnv;
-
-    /** Utility for processing matrix rotations */
-    private MatrixUtils matrixUtils;
 
     /**
      * Construct a new shader demo instance.
      */
     public GBufferDemo()
     {
-        super("Multiple Render Target Demo");
+        super("G-Buffer Demo",
+              new FrustumCullStage(),
+              new StateAndTransparencyDepthSortStage(),
+              true);
 
         I18nManager intl_mgr = I18nManager.getManager();
         intl_mgr.setApplication(APP_NAME, "config.i18n.org-j3d-aviatrix3d-resources-core");
-
-        setLayout(new BorderLayout());
-        addWindowListener(this);
-
-        matrixUtils = new MatrixUtils();
-
-        setupAviatrix();
-        setupSceneGraph();
-
-        setSize(WINDOW_SIZE, WINDOW_SIZE);
-        setLocation(40, 40);
-
-        // Need to set visible first before starting the rendering thread due
-        // to a bug in JOGL. See JOGL Issue #54 for more information on this.
-        // http://jogl.dev.java.net
-        setVisible(true);
     }
 
-    /**
-     * Setup the avaiatrix pipeline here
-     */
-    private void setupAviatrix()
-    {
-        // Assemble a simple single-threaded pipeline.
-        GraphicsRenderingCapabilities caps = new GraphicsRenderingCapabilities();
-
-        GraphicsCullStage culler = new FrustumCullStage();
-        culler.setOffscreenCheckEnabled(true);
-
-        GraphicsSortStage sorter = new StateAndTransparencyDepthSortStage();
-        surface = new DebugAWTSurface(caps);
-        //surface = new SimpleAWTSurface(caps);
-        surface.setColorClearNeeded(true);
-        surface.setClearColor(0, 0, 0, 1);
-
-        DefaultGraphicsPipeline pipeline = new DefaultGraphicsPipeline();
-
-        pipeline.setCuller(culler);
-        pipeline.setSorter(sorter);
-        pipeline.setGraphicsOutputDevice(surface);
-
-        displayManager = new SingleDisplayCollection();
-        displayManager.addPipeline(pipeline);
-
-        // Render manager
-        sceneManager = new SingleThreadRenderManager();
-        sceneManager.addDisplay(displayManager);
-        sceneManager.setMinimumFrameInterval(50);
-
-        // Before putting the pipeline into run mode, put the canvas on
-        // screen first.
-        Component comp = (Component)surface.getSurfaceObject();
-        add(comp, BorderLayout.CENTER);
-    }
-
-    //---------------------------------------------------------------
-    // Methods defined by WindowListener
-    //---------------------------------------------------------------
-
-    /**
-     * Ignored
-     */
-    public void windowActivated(WindowEvent evt)
-    {
-    }
-
-    /**
-     * Ignored
-     */
-    public void windowClosed(WindowEvent evt)
-    {
-    }
-
-    /**
-     * Exit the application
-     *
-     * @param evt The event that caused this method to be called.
-     */
-    public void windowClosing(WindowEvent evt)
-    {
-        sceneManager.shutdown();
-        System.exit(0);
-    }
-
-    /**
-     * Ignored
-     */
-    public void windowDeactivated(WindowEvent evt)
-    {
-    }
-
-    /**
-     * Ignored
-     */
-    public void windowDeiconified(WindowEvent evt)
-    {
-    }
-
-    /**
-     * Ignored
-     */
-    public void windowIconified(WindowEvent evt)
-    {
-    }
-
-    /**
-     * When the window is opened, start everything up.
-     */
-    public void windowOpened(WindowEvent evt)
-    {
-        sceneManager.setEnabled(true);
-    }
-
-    //---------------------------------------------------------------
-    // Local methods
-    //---------------------------------------------------------------
-
-    /**
-     * Setup the basic scene which consists of a quad and a viewpoint
-     */
-    private void setupSceneGraph()
+    @Override
+    protected void setupSceneGraph()
     {
         // two quads to draw to
         float[] quad_coords = { -1, -1, 0, 1, -1, 0, 1, 1, 0, -1, 1, 0 };
@@ -357,6 +215,7 @@ public class GBufferDemo extends Frame
         SimpleViewport view = new SimpleViewport();
         view.setDimensions(0, 0, WINDOW_SIZE, WINDOW_SIZE);
         view.setScene(scene);
+        resizeManager.addManagedViewport(view);
 
         SimpleLayer layer = new SimpleLayer();
         layer.setViewport(view);
@@ -418,8 +277,8 @@ public class GBufferDemo extends Frame
         real_geom.setAttributes(5, 4, tangents, false);
 
         // Load textures for the normal and colour maps
-        TextureComponent2D normal_comp = loadTextureImage(NORMAL_MAP_FILE);
-        TextureComponent2D colour_comp = loadTextureImage(COLOUR_MAP_FILE);
+        TextureComponent2D normal_comp = loadTexture(NORMAL_MAP_FILE);
+        TextureComponent2D colour_comp = loadTexture(COLOUR_MAP_FILE);
 
         TextureUnit[] tex_units = { new TextureUnit(), new TextureUnit() };
 
@@ -495,6 +354,8 @@ public class GBufferDemo extends Frame
         shape.setGeometry(real_geom);
         shape.setAppearance(app);
 
+        MatrixUtils matrixUtils = new MatrixUtils();
+
         // Transform the geometry in some way
         Matrix4d geom_mat1 = new Matrix4d();
         matrixUtils.rotateX(PI_4, geom_mat1);
@@ -554,6 +415,7 @@ public class GBufferDemo extends Frame
         MultipassViewport viewport = new MultipassViewport();
         viewport.setDimensions(0, 0, TEXTURE_SIZE, TEXTURE_SIZE);
         viewport.setScene(main_scene);
+        resizeManager.addManagedViewport(viewport);
 
         SimpleLayer layer = new SimpleLayer();
         layer.setViewport(viewport);
@@ -574,99 +436,10 @@ public class GBufferDemo extends Frame
         off_tex.setLayers(layers, 1);
 
         ShaderLoadStatusCallback cb =
-            new ShaderLoadStatusCallback(vert_shader, frag_shader, shader_prog);
+            new ShaderLoadStatusCallback(vert_shader, frag_shader, shader_prog, resizeManager);
         sceneManager.setApplicationObserver(cb);
 
         return off_tex;
-    }
-
-    /**
-     * Load the shader file. Find it relative to the classpath.
-     *
-     * @param name THe name of the file to load
-     */
-    private String[] loadShaderFile(String name)
-    {
-        File file = DataUtils.lookForFile(name, getClass(), null);
-        if(file == null)
-        {
-            System.out.println("Cannot find file " + name);
-            return null;
-        }
-
-        String ret_val = null;
-
-        try
-        {
-            FileReader is = new FileReader(file);
-            StringBuilder buf = new StringBuilder();
-            char[] read_buf = new char[1024];
-            int num_read = 0;
-
-            while((num_read = is.read(read_buf, 0, 1024)) != -1)
-                buf.append(read_buf, 0, num_read);
-
-            is.close();
-
-            ret_val = buf.toString();
-        }
-        catch(IOException ioe)
-        {
-            System.out.println("I/O error " + ioe);
-        }
-
-        return new String[] { ret_val };
-    }
-
-    /**
-     * Load a single image.
-     */
-    private TextureComponent2D loadTextureImage(String name)
-    {
-        TextureComponent2D img_comp = null;
-
-        try
-        {
-            File file = DataUtils.lookForFile(name, getClass(), null);
-            if(file == null)
-            {
-                System.out.println("Can't find texture source file");
-                return null;
-            }
-
-            FileInputStream is = new FileInputStream(file);
-
-            BufferedInputStream stream = new BufferedInputStream(is);
-            BufferedImage img = ImageIO.read(stream);
-
-            int img_width = img.getWidth(null);
-            int img_height = img.getHeight(null);
-            int format = TextureComponent.FORMAT_RGB;
-
-            switch(img.getType())
-            {
-                case BufferedImage.TYPE_3BYTE_BGR:
-                case BufferedImage.TYPE_CUSTOM:
-                case BufferedImage.TYPE_INT_RGB:
-                    break;
-
-                case BufferedImage.TYPE_4BYTE_ABGR:
-                case BufferedImage.TYPE_INT_ARGB:
-                    format = TextureComponent.FORMAT_RGBA;
-                    break;
-            }
-
-            img_comp = new ImageTextureComponent2D(format,
-                                            img_width,
-                                            img_height,
-                                            img);
-        }
-        catch(IOException ioe)
-        {
-            System.out.println("Error reading image: " + ioe);
-        }
-
-        return  img_comp;
     }
 
     public static void main(String[] args)

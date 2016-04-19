@@ -31,9 +31,7 @@ import org.j3d.util.I18nManager;
 import org.j3d.aviatrix3d.*;
 import org.j3d.aviatrix3d.pipeline.graphics.*;
 
-import org.j3d.aviatrix3d.output.graphics.SimpleAWTSurface;
-import org.j3d.aviatrix3d.management.SingleThreadRenderManager;
-import org.j3d.aviatrix3d.management.SingleDisplayCollection;
+import j3d.aviatrix3d.examples.basic.BaseDemoFrame;
 
 /**
  * Example application demonstrating deferred shading with simple lighting.
@@ -44,8 +42,7 @@ import org.j3d.aviatrix3d.management.SingleDisplayCollection;
  * @author Justin Couch
  * @version $Revision: 1.22 $
  */
-public class DeferredShadingDemo extends Frame
-    implements WindowListener
+public class DeferredShadingDemo extends BaseDemoFrame
 {
     /** App name to register preferences under */
     private static final String APP_NAME = "DeferredShadingDemo";
@@ -155,15 +152,6 @@ public class DeferredShadingDemo extends Frame
         (byte)0x00, (byte)0x00, (byte)0xFF, (byte)0x00, (byte)0x00, (byte)0xFF,
     };
 
-    /** Manager for the scene graph handling */
-    private SingleThreadRenderManager sceneManager;
-
-    /** Manager for the layers etc */
-    private SingleDisplayCollection displayManager;
-
-    /** Our drawing surface */
-    private GraphicsOutputDevice surface;
-
     /** The view environment created for the main scene */
     private ViewEnvironment mainSceneEnv;
 
@@ -184,131 +172,17 @@ public class DeferredShadingDemo extends Frame
      */
     public DeferredShadingDemo()
     {
-        super("Deferred Shading Demo");
+        super("Deferred Shading Demo",
+              new FrustumCullStage(),
+              new StateAndTransparencyDepthSortStage(),
+              false);
 
         I18nManager intl_mgr = I18nManager.getManager();
         intl_mgr.setApplication(APP_NAME, "config.i18n.org-j3d-aviatrix3d-resources-core");
-
-        setLayout(new BorderLayout());
-        addWindowListener(this);
-
-        setupAviatrix();
-        setupSceneGraph();
-
-        setSize(640, 480);
-        setLocation(40, 40);
-
-        // Need to set visible first before starting the rendering thread due
-        // to a bug in JOGL. See JOGL Issue #54 for more information on this.
-        // http://jogl.dev.java.net
-        setVisible(true);
     }
 
-    /**
-     * Setup the avaiatrix pipeline here
-     */
-    private void setupAviatrix()
-    {
-        // Assemble a simple single-threaded pipeline.
-        GraphicsRenderingCapabilities caps = new GraphicsRenderingCapabilities();
-
-        GraphicsCullStage culler = new FrustumCullStage();
-        culler.setOffscreenCheckEnabled(true);
-
-//        GraphicsSortStage sorter = new StateSortStage();
-        GraphicsSortStage sorter = new StateAndTransparencyDepthSortStage();
-        surface = new SimpleAWTSurface(caps);
-//        surface = new DebugAWTSurface(caps);
-//        ((DebugAWTSurface)surface).traceNextFrames(20);
-        surface.setColorClearNeeded(true);
-        surface.setClearColor(0, 0, 0, 1);
-
-        DefaultGraphicsPipeline pipeline = new DefaultGraphicsPipeline();
-
-        pipeline.setCuller(culler);
-        pipeline.setSorter(sorter);
-        pipeline.setGraphicsOutputDevice(surface);
-
-        displayManager = new SingleDisplayCollection();
-        displayManager.addPipeline(pipeline);
-
-        // Render manager
-        sceneManager = new SingleThreadRenderManager();
-        sceneManager.addDisplay(displayManager);
-        sceneManager.setMinimumFrameInterval(30);
-
-        // Before putting the pipeline into run mode, put the canvas on
-        // screen first.
-        Component comp = (Component)surface.getSurfaceObject();
-        add(comp, BorderLayout.CENTER);
-    }
-
-    //---------------------------------------------------------------
-    // Methods defined by WindowListener
-    //---------------------------------------------------------------
-
-    /**
-     * Ignored
-     */
-    public void windowActivated(WindowEvent evt)
-    {
-    }
-
-    /**
-     * Ignored
-     */
-    public void windowClosed(WindowEvent evt)
-    {
-    }
-
-    /**
-     * Exit the application
-     *
-     * @param evt The event that caused this method to be called.
-     */
-    public void windowClosing(WindowEvent evt)
-    {
-        sceneManager.shutdown();
-        System.exit(0);
-    }
-
-    /**
-     * Ignored
-     */
-    public void windowDeactivated(WindowEvent evt)
-    {
-    }
-
-    /**
-     * Ignored
-     */
-    public void windowDeiconified(WindowEvent evt)
-    {
-    }
-
-    /**
-     * Ignored
-     */
-    public void windowIconified(WindowEvent evt)
-    {
-    }
-
-    /**
-     * When the window is opened, start everything up.
-     */
-    public void windowOpened(WindowEvent evt)
-    {
-        sceneManager.setEnabled(true);
-    }
-
-    //---------------------------------------------------------------
-    // Local methods
-    //---------------------------------------------------------------
-
-    /**
-     * Setup the basic scene which consists of a quad and a viewpoint
-     */
-    private void setupSceneGraph()
+    @Override
+    protected void setupSceneGraph()
     {
         shaderCallback = new DeferredShadingAnimator();
         surface.addGraphicsResizeListener(shaderCallback);
@@ -1023,7 +897,7 @@ shader_args.setUniform("planes", 2, d_planes, 1);
         MRTOffscreenTexture2D gbuffer_tex =
             createSSAOGBufferTexture(viewPos);
 
-        TextureComponent2D random_comp = loadTextureImage(RANDOM_MAP_FILE);
+        TextureComponent2D random_comp = loadTexture(RANDOM_MAP_FILE);
 
         TextureUnit[] tex_unit =
         {
@@ -1654,8 +1528,8 @@ shader_args.setUniform("planes", 2, d_planes, 1);
         wall_geom.setTextureCoordinates(tex_type, wall_tex_coords, 1);
 
         // Load textures for the normal and colour maps
-        TextureComponent2D normal_comp = loadTextureImage(NORMAL_MAP_FILE);
-        TextureComponent2D colour_comp = loadTextureImage(COLOUR_MAP_FILE);
+        TextureComponent2D normal_comp = loadTexture(NORMAL_MAP_FILE);
+        TextureComponent2D colour_comp = loadTexture(COLOUR_MAP_FILE);
 
         TextureUnit[] text_tex_units = { new TextureUnit(), new TextureUnit() };
 
@@ -1787,44 +1661,6 @@ shader_args.setUniform("planes", 2, d_planes, 1);
     }
 
     /**
-     * Load the shader file. Find it relative to the classpath.
-     *
-     * @param name THe name of the file to load
-     */
-    private String[] loadShaderFile(String name)
-    {
-        File file = DataUtils.lookForFile(name, getClass(), null);
-        if(file == null)
-        {
-            System.out.println("Cannot find file " + name);
-            return null;
-        }
-
-        String ret_val = null;
-
-        try
-        {
-            FileReader is = new FileReader(file);
-            StringBuffer buf = new StringBuffer();
-            char[] read_buf = new char[1024];
-            int num_read = 0;
-
-            while((num_read = is.read(read_buf, 0, 1024)) != -1)
-                buf.append(read_buf, 0, num_read);
-
-            is.close();
-
-            ret_val = buf.toString();
-        }
-        catch(IOException ioe)
-        {
-            System.out.println("I/O error " + ioe);
-        }
-
-        return new String[] { ret_val };
-    }
-
-    /**
      * Generate an energy-minimised random sample pattern. Taken from here:
      * http://www.malmer.nu/index.php/2008-04-11_energy-minimization-is-your-friend/
      *
@@ -1892,57 +1728,6 @@ shader_args.setUniform("planes", 2, d_planes, 1);
         }
 
         return ret_val;
-    }
-
-    /**
-     * Load a single image.
-     */
-    private TextureComponent2D loadTextureImage(String name)
-    {
-        TextureComponent2D img_comp = null;
-
-        try
-        {
-            File file = DataUtils.lookForFile(name, getClass(), null);
-            if(file == null)
-            {
-                System.out.println("Can't find texture source file");
-                return null;
-            }
-
-            FileInputStream is = new FileInputStream(file);
-
-            BufferedInputStream stream = new BufferedInputStream(is);
-            BufferedImage img = ImageIO.read(stream);
-
-            int img_width = img.getWidth(null);
-            int img_height = img.getHeight(null);
-            int format = TextureComponent.FORMAT_RGB;
-
-            switch(img.getType())
-            {
-                case BufferedImage.TYPE_3BYTE_BGR:
-                case BufferedImage.TYPE_CUSTOM:
-                case BufferedImage.TYPE_INT_RGB:
-                    break;
-
-                case BufferedImage.TYPE_4BYTE_ABGR:
-                case BufferedImage.TYPE_INT_ARGB:
-                    format = TextureComponent.FORMAT_RGBA;
-                    break;
-            }
-
-            img_comp = new ImageTextureComponent2D(format,
-                                            img_width,
-                                            img_height,
-                                            img);
-        }
-        catch(IOException ioe)
-        {
-            System.out.println("Error reading image: " + ioe);
-        }
-
-        return  img_comp;
     }
 
     public static void main(String[] args)

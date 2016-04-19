@@ -4,6 +4,8 @@ package j3d.aviatrix3d.examples.shader;
 // None
 
 // Local imports
+import org.j3d.renderer.aviatrix3d.pipeline.ViewportResizeManager;
+
 import org.j3d.aviatrix3d.*;
 
 /**
@@ -27,13 +29,17 @@ public class ShaderLoadStatusCallback
     /** Frame counter so we know when to print out shader debug */
     private int frameCount;
 
+    private ViewportResizeManager resizeManager;
+
     /**
      *
      */
     public ShaderLoadStatusCallback(ShaderObject vert,
                                     ShaderObject frag,
-                                    ShaderProgram comp)
+                                    ShaderProgram comp,
+                                    ViewportResizeManager resizer)
     {
+        resizeManager = resizer;
         vertShader = vert;
         fragShader = frag;
         completeShader = comp;
@@ -48,6 +54,7 @@ public class ShaderLoadStatusCallback
      */
     public void updateSceneGraph()
     {
+        resizeManager.sendResizeUpdates();
         if(frameCount == 4)
         {
             System.out.println("vert log " + vertShader.getLastInfoLog());

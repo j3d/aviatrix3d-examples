@@ -228,7 +228,7 @@ public class PerPixelLightingDemo extends Frame
 	/**
 	 * Setup the basic scene which consists of a quad and a viewpoint
 	 */
-	private void setupSceneGraph()
+	protected void setupSceneGraph()
 	{
 		Group scene_root = new Group();
 

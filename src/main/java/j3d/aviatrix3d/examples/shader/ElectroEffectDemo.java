@@ -7,6 +7,7 @@ import java.awt.event.*;
 import java.io.*;
 import java.io.IOException;
 
+import j3d.aviatrix3d.examples.basic.BaseDemoFrame;
 import org.j3d.maths.vector.Matrix4d;
 import org.j3d.maths.vector.Vector3d;
 
@@ -37,8 +38,7 @@ import org.j3d.util.DataUtils;
  * @author Justin Couch
  * @version $Revision: 1.13 $
  */
-public class ElectroEffectDemo extends Frame
-    implements WindowListener
+public class ElectroEffectDemo extends BaseDemoFrame
 {
     private static final int XSIZE = 128;
     private static final int YSIZE = 32;
@@ -68,59 +68,10 @@ public class ElectroEffectDemo extends Frame
     public ElectroEffectDemo()
     {
         super("OpenGL Shaders: Fragment + 3D Texture");
-
-        setLayout(new BorderLayout());
-        addWindowListener(this);
-
-        setupAviatrix();
-        setupSceneGraph(0);
-
-        setSize(500, 500);
-        setLocation(40, 40);
-
-        // Need to set visible first before starting the rendering thread due
-        // to a bug in JOGL. See JOGL Issue #54 for more information on this.
-        // http://jogl.dev.java.net
-        setVisible(true);
     }
 
-    /**
-     * Setup the avaiatrix pipeline here
-     */
-    private void setupAviatrix()
-    {
-        // Assemble a simple single-threaded pipeline.
-        GraphicsRenderingCapabilities caps = new GraphicsRenderingCapabilities();
-
-        GraphicsCullStage culler = new NullCullStage();
-        culler.setOffscreenCheckEnabled(false);
-
-        GraphicsSortStage sorter = new NullSortStage();
-        surface = new DebugAWTSurface(caps);
-        DefaultGraphicsPipeline pipeline = new DefaultGraphicsPipeline();
-
-        pipeline.setCuller(culler);
-        pipeline.setSorter(sorter);
-        pipeline.setGraphicsOutputDevice(surface);
-
-        displayManager = new SingleDisplayCollection();
-        displayManager.addPipeline(pipeline);
-
-        // Render manager
-        sceneManager = new SingleThreadRenderManager();
-        sceneManager.addDisplay(displayManager);
-        sceneManager.setMinimumFrameInterval(0);
-
-        // Before putting the pipeline into run mode, put the canvas on
-        // screen first.
-        Component comp = (Component)surface.getSurfaceObject();
-        add(comp, BorderLayout.CENTER);
-    }
-
-    /**
-     * Setup the basic scene which consists of a quad and a viewpoint
-     */
-    private void setupSceneGraph(int shaderNum)
+    @Override
+    protected void setupSceneGraph()
     {
         PerlinNoiseGenerator noise_gen = new PerlinNoiseGenerator();
 
@@ -188,9 +139,9 @@ public class ElectroEffectDemo extends Frame
 
         TriangleStripArray geom = new TriangleStripArray();
 
-        String shader_txt = loadFile(FRAG_SHADER_FILE);
+        String[] shader_txt = loadShaderFile(FRAG_SHADER_FILE);
         fragShader = new FragmentShader();
-        fragShader.setProgramString(shader_txt);
+        fragShader.setProgramString(shader_txt[0]);
 
         GL14Shader shader = new GL14Shader();
         shader.setFragmentShader(fragShader);
@@ -216,6 +167,7 @@ public class ElectroEffectDemo extends Frame
         SimpleViewport view = new SimpleViewport();
         view.setDimensions(0, 0, 500, 500);
         view.setScene(scene);
+        resizeManager.addManagedViewport(view);
 
         SimpleLayer layer = new SimpleLayer();
         layer.setViewport(view);
@@ -225,104 +177,8 @@ public class ElectroEffectDemo extends Frame
     }
 
     //---------------------------------------------------------------
-    // Methods defined by WindowListener
-    //---------------------------------------------------------------
-
-    /**
-     * Ignored
-     */
-    public void windowActivated(WindowEvent evt)
-    {
-    }
-
-    /**
-     * Ignored
-     */
-    public void windowClosed(WindowEvent evt)
-    {
-    }
-
-    /**
-     * Exit the application
-     *
-     * @param evt The event that caused this method to be called.
-     */
-    public void windowClosing(WindowEvent evt)
-    {
-        sceneManager.shutdown();
-        System.exit(0);
-    }
-
-    /**
-     * Ignored
-     */
-    public void windowDeactivated(WindowEvent evt)
-    {
-    }
-
-    /**
-     * Ignored
-     */
-    public void windowDeiconified(WindowEvent evt)
-    {
-    }
-
-    /**
-     * Ignored
-     */
-    public void windowIconified(WindowEvent evt)
-    {
-    }
-
-    /**
-     * When the window is opened, start everything up.
-     */
-    public void windowOpened(WindowEvent evt)
-    {
-        sceneManager.setEnabled(true);
-    }
-
-    //---------------------------------------------------------------
     // Local methods
     //---------------------------------------------------------------
-
-    /**
-     * Load the shader file. Find it relative to the classpath.
-     *
-     * @param name THe name of the file to load
-     */
-    private String loadFile(String name)
-    {
-        File file = DataUtils.lookForFile(name, getClass(), null);
-        if(file == null)
-        {
-            System.out.println("Cannot find file " + name);
-            return null;
-        }
-
-        String ret_val = null;
-
-        try
-        {
-            FileReader is = new FileReader(file);
-            StringBuffer buf = new StringBuffer();
-            char[] read_buf = new char[1024];
-            int num_read = 0;
-
-            while((num_read = is.read(read_buf, 0, 1024)) != -1)
-                buf.append(read_buf, 0, num_read);
-
-            is.close();
-
-            ret_val = buf.toString();
-        }
-        catch(IOException ioe)
-        {
-            System.out.println("I/O error " + ioe);
-        }
-
-        return ret_val;
-    }
 
     public static void main(String[] args)
     {

@@ -23,22 +23,14 @@ import java.io.FileInputStream;
 import java.io.BufferedInputStream;
 
 import javax.imageio.ImageIO;
+
 import org.j3d.maths.vector.Matrix4d;
 import org.j3d.maths.vector.Vector3d;
 
 // Local imports
 import org.j3d.aviatrix3d.*;
 
-import org.j3d.aviatrix3d.output.graphics.DebugAWTSurface;
-import org.j3d.aviatrix3d.pipeline.graphics.GraphicsCullStage;
-import org.j3d.aviatrix3d.pipeline.graphics.DefaultGraphicsPipeline;
-import org.j3d.aviatrix3d.pipeline.graphics.GraphicsOutputDevice;
-import org.j3d.aviatrix3d.pipeline.graphics.NullCullStage;
-import org.j3d.aviatrix3d.pipeline.graphics.NullSortStage;
-import org.j3d.aviatrix3d.pipeline.graphics.GraphicsSortStage;
-import org.j3d.aviatrix3d.management.SingleThreadRenderManager;
-import org.j3d.aviatrix3d.management.SingleDisplayCollection;
-
+import j3d.aviatrix3d.examples.basic.BaseDemoFrame;
 import org.j3d.geom.GeometryData;
 import org.j3d.geom.SphereGenerator;
 import org.j3d.util.DataUtils;
@@ -46,12 +38,15 @@ import org.j3d.util.DataUtils;
 /**
  * Demo that is a port of Humus' cloth falling over spheres code.
  *
+ * FIXME
+ *
  * The original demo and code can be found here:
  * http://esprit.campus.luth.se/~humus/3D/index.php?page=OpenGL
  */
-public class HumusClothDemo extends Frame
-    implements WindowListener
+public class HumusClothDemo extends BaseDemoFrame
 {
+    private static final int nSpheres = 2;
+    
     /** Names of the shader vertex file for the sphere */
     private static final String SPHERE_VERTEX_SHADER =
         "shaders/examples/simple/humus_cloth_sphere.vert";
@@ -74,15 +69,6 @@ public class HumusClothDemo extends Frame
     /** Shared geometry for the spheres */
     private IndexedTriangleStripArray sphereGeom;
 
-    /** Manager for the scene graph handling */
-    private SingleThreadRenderManager sceneManager;
-
-    /** Manager for the layers etc */
-    private SingleDisplayCollection displayManager;
-
-    /** Our drawing surface */
-    private GraphicsOutputDevice surface;
-
     /** Generator used to create our spheres */
     private SphereGenerator sphereGen;
 
@@ -90,123 +76,10 @@ public class HumusClothDemo extends Frame
     public HumusClothDemo()
     {
         super("Aviatrix3D Port of Humus Cloth Demo");
-
-        setLayout(new BorderLayout());
-        addWindowListener(this);
-
-        setupAviatrix();
-        setupSceneGraph(3);
-
-        setSize(600, 600);
-        setLocation(40, 40);
-
-        // Need to set visible first before starting the rendering thread due
-        // to a bug in JOGL. See JOGL Issue #54 for more information on this.
-        // http://jogl.dev.java.net
-        setVisible(true);
     }
 
-    //---------------------------------------------------------------
-    // Methods defined by WindowListener
-    //---------------------------------------------------------------
-
-    /**
-     * Ignored
-     */
-    public void windowActivated(WindowEvent evt)
-    {
-    }
-
-    /**
-     * Ignored
-     */
-    public void windowClosed(WindowEvent evt)
-    {
-    }
-
-    /**
-     * Exit the application
-     *
-     * @param evt The event that caused this method to be called.
-     */
-    public void windowClosing(WindowEvent evt)
-    {
-        sceneManager.shutdown();
-        System.exit(0);
-    }
-
-    /**
-     * Ignored
-     */
-    public void windowDeactivated(WindowEvent evt)
-    {
-    }
-
-    /**
-     * Ignored
-     */
-    public void windowDeiconified(WindowEvent evt)
-    {
-    }
-
-    /**
-     * Ignored
-     */
-    public void windowIconified(WindowEvent evt)
-    {
-    }
-
-    /**
-     * When the window is opened, start everything up.
-     */
-    public void windowOpened(WindowEvent evt)
-    {
-        sceneManager.setEnabled(true);
-    }
-
-    //---------------------------------------------------------------
-    // Local methods
-    //---------------------------------------------------------------
-
-    /**
-     * Setup the avaiatrix pipeline here
-     */
-    private void setupAviatrix()
-    {
-        // Assemble a simple single-threaded pipeline.
-        GraphicsRenderingCapabilities caps = new GraphicsRenderingCapabilities();
-
-        GraphicsCullStage culler = new NullCullStage();
-        culler.setOffscreenCheckEnabled(false);
-
-        GraphicsSortStage sorter = new NullSortStage();
-        surface = new DebugAWTSurface(caps);
-        DefaultGraphicsPipeline pipeline = new DefaultGraphicsPipeline();
-
-        pipeline.setCuller(culler);
-        pipeline.setSorter(sorter);
-        pipeline.setGraphicsOutputDevice(surface);
-
-        displayManager = new SingleDisplayCollection();
-        displayManager.addPipeline(pipeline);
-
-        // Render manager
-        sceneManager = new SingleThreadRenderManager();
-        sceneManager.addDisplay(displayManager);
-        sceneManager.setMinimumFrameInterval(20);
-
-        // Before putting the pipeline into run mode, put the canvas on
-        // screen first.
-        Component comp = (Component)surface.getSurfaceObject();
-        add(comp, BorderLayout.CENTER);
-    }
-
-    /**
-     * Setup the basic scene which consists of a quad and a viewpoint
-     *
-     * @param nSpheres Number of sphere objects to pre-initialise
-     */
-    private void setupSceneGraph(int nSpheres)
+    @Override
+    protected void setupSceneGraph()
     {
         // View group
         Viewpoint vp = new Viewpoint();
@@ -257,7 +130,7 @@ public class HumusClothDemo extends Frame
 
         // Run through the flags directory and load every texture found into
         // the flags array as texture objects.
-        File flags_dir = DataUtils.lookForFile("textures/flags", getClass(), null);
+        File flags_dir = DataUtils.lookForFile("images/examples/shader/flags", getClass(), null);
         File[] files_in_dir = flags_dir.listFiles();
         Texture2D[] flag_textures = new Texture2D[files_in_dir.length];
         int num_flags = 0;
@@ -322,6 +195,7 @@ public class HumusClothDemo extends Frame
         SimpleViewport view = new SimpleViewport();
         view.setDimensions(0, 0, 500, 500);
         view.setScene(scene);
+        resizeManager.addManagedViewport(view);
 
         SimpleLayer layer = new SimpleLayer();
         layer.setViewport(view);
@@ -344,12 +218,12 @@ public class HumusClothDemo extends Frame
         {
             sphereProgram = new ShaderProgram();
             ShaderObject vert_object = new ShaderObject(true);
-            String[] source = loadShaderSource(SPHERE_VERTEX_SHADER);
+            String[] source = loadShaderFile(SPHERE_VERTEX_SHADER);
             vert_object.setSourceStrings(source, 1);
             vert_object.compile();
 
             ShaderObject frag_object = new ShaderObject(false);
-            source = loadShaderSource(SPHERE_FRAG_SHADER);
+            source = loadShaderFile(SPHERE_FRAG_SHADER);
             frag_object.setSourceStrings(source, 1);
             frag_object.compile();
 
@@ -432,12 +306,12 @@ public class HumusClothDemo extends Frame
 
         ShaderProgram program = new ShaderProgram();
         ShaderObject vert_object = new ShaderObject(true);
-        String[] source = loadShaderSource(LIGHTING_VERTEX_SHADER);
+        String[] source = loadShaderFile(LIGHTING_VERTEX_SHADER);
         vert_object.setSourceStrings(source, 1);
         vert_object.compile();
 
         ShaderObject frag_object = new ShaderObject(false);
-        source = loadShaderSource(LIGHTING_FRAG_SHADER);
+        source = loadShaderFile(LIGHTING_FRAG_SHADER);
         frag_object.setSourceStrings(source, 1);
         frag_object.compile();
 
@@ -497,8 +371,7 @@ public class HumusClothDemo extends Frame
         geom.setVertices(QuadArray.COORDINATE_3,coords, 4);
         geom.setTextureCoordinates(tex_type, tex_coords, 1);
 
-        File light_file = new File("textures/humus_particle.png");
-        TextureComponent2D img_comp = loadImage(light_file);
+        TextureComponent2D img_comp = loadTexture("images/examples/shader/humus_particle.png");
         Texture2D tex = new Texture2D(Texture2D.FORMAT_RGBA, img_comp);
         tex.setBoundaryModeS(Texture.BM_CLAMP_TO_EDGE);
         tex.setBoundaryModeT(Texture.BM_CLAMP_TO_EDGE);
@@ -517,48 +390,6 @@ public class HumusClothDemo extends Frame
         tg.addChild(shape);
 
         return tg;
-    }
-
-    /**
-     * Load a shader source file into an array of strings.
-     *
-     * @param name The name of the file to load
-     * @return the strings that represent the source.
-     */
-    private String[] loadShaderSource(String name)
-    {
-        File file = DataUtils.lookForFile(name, getClass(), null);
-        if(file == null)
-        {
-            System.out.println("Can't find shader " + file);
-            return null;
-        }
-
-        String str = null;
-
-        try
-        {
-            FileInputStream fis = new FileInputStream(file);
-            byte[] raw_chars = new byte[(int)file.length()];
-            byte[] readbuf = new byte[1024];
-            int bytes_read = 0;
-            int read_offset = 0;
-
-            while((bytes_read = fis.read(readbuf, 0, 1024)) != -1)
-            {
-                System.arraycopy(readbuf, 0, raw_chars, read_offset, bytes_read);
-                read_offset += bytes_read;
-            }
-
-                str = new String(raw_chars);
-        }
-        catch(IOException ioe)
-        {
-            System.out.println("error reading shader file " + ioe.getMessage());
-            return null;
-        }
-
-        return new String[] { str };
     }
 
     /**

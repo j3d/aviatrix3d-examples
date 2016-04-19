@@ -23,6 +23,8 @@ import java.io.FileInputStream;
 import java.io.BufferedInputStream;
 
 import javax.imageio.ImageIO;
+
+import j3d.aviatrix3d.examples.basic.BaseDemoFrame;
 import org.j3d.maths.vector.Matrix4d;
 import org.j3d.maths.vector.Vector3d;
 
@@ -52,8 +54,7 @@ import org.j3d.util.I18nManager;
  * The original demo and code can be found here:
  * http://esprit.campus.luth.se/~humus/3D/index.php?page=OpenGL
  */
-public class HumusFlagDemo extends Frame
-    implements WindowListener
+public class HumusFlagDemo extends BaseDemoFrame
 {
     private static final String APP_NAME = "examples.HumusFlagDemo";
 
@@ -89,18 +90,6 @@ public class HumusFlagDemo extends Frame
     /** Shader program shared between all the spheres */
     private ShaderProgram poleProgram;
 
-    /** Shared geometry for the spheres */
-    private IndexedTriangleStripArray sphereGeom;
-
-    /** Manager for the scene graph handling */
-    private SingleThreadRenderManager sceneManager;
-
-    /** Manager for the layers etc */
-    private SingleDisplayCollection displayManager;
-
-    /** Our drawing surface */
-    private GraphicsOutputDevice surface;
-
     /** Create a new demo */
     public HumusFlagDemo()
     {
@@ -108,123 +97,10 @@ public class HumusFlagDemo extends Frame
 
         I18nManager intl_mgr = I18nManager.getManager();
         intl_mgr.setApplication(APP_NAME, "config.i18n.org-j3d-aviatrix3d-resources-core");
-
-        setLayout(new BorderLayout());
-        addWindowListener(this);
-
-        setupAviatrix();
-        setupSceneGraph(3);
-
-        setSize(600, 600);
-        setLocation(40, 40);
-
-        // Need to set visible first before starting the rendering thread due
-        // to a bug in JOGL. See JOGL Issue #54 for more information on this.
-        // http://jogl.dev.java.net
-        setVisible(true);
     }
 
-    //---------------------------------------------------------------
-    // Methods defined by WindowListener
-    //---------------------------------------------------------------
-
-    /**
-     * Ignored
-     */
-    public void windowActivated(WindowEvent evt)
-    {
-    }
-
-    /**
-     * Ignored
-     */
-    public void windowClosed(WindowEvent evt)
-    {
-    }
-
-    /**
-     * Exit the application
-     *
-     * @param evt The event that caused this method to be called.
-     */
-    public void windowClosing(WindowEvent evt)
-    {
-        sceneManager.shutdown();
-        System.exit(0);
-    }
-
-    /**
-     * Ignored
-     */
-    public void windowDeactivated(WindowEvent evt)
-    {
-    }
-
-    /**
-     * Ignored
-     */
-    public void windowDeiconified(WindowEvent evt)
-    {
-    }
-
-    /**
-     * Ignored
-     */
-    public void windowIconified(WindowEvent evt)
-    {
-    }
-
-    /**
-     * When the window is opened, start everything up.
-     */
-    public void windowOpened(WindowEvent evt)
-    {
-        sceneManager.setEnabled(true);
-    }
-
-    //---------------------------------------------------------------
-    // Local methods
-    //---------------------------------------------------------------
-
-    /**
-     * Setup the avaiatrix pipeline here
-     */
-    private void setupAviatrix()
-    {
-        // Assemble a simple single-threaded pipeline.
-        GraphicsRenderingCapabilities caps = new GraphicsRenderingCapabilities();
-
-        GraphicsCullStage culler = new NullCullStage();
-        culler.setOffscreenCheckEnabled(false);
-
-        GraphicsSortStage sorter = new NullSortStage();
-        surface = new DebugAWTSurface(caps);
-        DefaultGraphicsPipeline pipeline = new DefaultGraphicsPipeline();
-
-        pipeline.setCuller(culler);
-        pipeline.setSorter(sorter);
-        pipeline.setGraphicsOutputDevice(surface);
-
-        displayManager = new SingleDisplayCollection();
-        displayManager.addPipeline(pipeline);
-
-        // Render manager
-        sceneManager = new SingleThreadRenderManager();
-        sceneManager.addDisplay(displayManager);
-        sceneManager.setMinimumFrameInterval(20);
-
-        // Before putting the pipeline into run mode, put the canvas on
-        // screen first.
-        Component comp = (Component)surface.getSurfaceObject();
-        add(comp, BorderLayout.CENTER);
-    }
-
-    /**
-     * Setup the basic scene which consists of a quad and a viewpoint
-     *
-     * @param nSpheres Number of sphere objects to pre-initialise
-     */
-    private void setupSceneGraph(int nSpheres)
+    @Override
+    protected void setupSceneGraph()
     {
         // View group
         Viewpoint vp = new Viewpoint();
@@ -252,13 +128,13 @@ public class HumusFlagDemo extends Frame
         Texture2D[] flag_textures = new Texture2D[files_in_dir.length];
         int num_flags = 0;
 
-        for(int i = 0; i < files_in_dir.length; i++)
+        for (File file_in_dir : files_in_dir)
         {
-            if (files_in_dir[i].isDirectory())
+            if (file_in_dir.isDirectory())
                 continue;
 
-            System.out.println("loading " + files_in_dir[i]);
-            TextureComponent2D img_comp = loadImage(files_in_dir[i]);
+            System.out.println("loading " + file_in_dir);
+            TextureComponent2D img_comp = loadTexture(file_in_dir.getAbsolutePath());
 
             if (img_comp != null)
             {
@@ -298,6 +174,7 @@ public class HumusFlagDemo extends Frame
         SimpleViewport view = new SimpleViewport();
         view.setDimensions(0, 0, 500, 500);
         view.setScene(scene);
+        resizeManager.addManagedViewport(view);
 
         SimpleLayer layer = new SimpleLayer();
         layer.setViewport(view);
@@ -317,12 +194,12 @@ public class HumusFlagDemo extends Frame
     {
         poleProgram = new ShaderProgram();
         ShaderObject vert_object = new ShaderObject(true);
-        String[] source = loadShaderSource(POLE_VERTEX_SHADER);
+        String[] source = loadShaderFile(POLE_VERTEX_SHADER);
         vert_object.setSourceStrings(source, 1);
         vert_object.compile();
 
         ShaderObject frag_object = new ShaderObject(false);
-        source = loadShaderSource(POLE_FRAG_SHADER);
+        source = loadShaderFile(POLE_FRAG_SHADER);
         frag_object.setSourceStrings(source, 1);
         frag_object.compile();
 
@@ -516,12 +393,12 @@ public class HumusFlagDemo extends Frame
         TextureUnit[] tex_units = { new TextureUnit() };
 
         ShaderObject vert_object = new ShaderObject(true);
-        String[] source = loadShaderSource(LIGHTING_VERTEX_SHADER);
+        String[] source = loadShaderFile(LIGHTING_VERTEX_SHADER);
         vert_object.setSourceStrings(source, 1);
         vert_object.compile();
 
         ShaderObject frag_object = new ShaderObject(false);
-        source = loadShaderSource(LIGHTING_FRAG_SHADER);
+        source = loadShaderFile(LIGHTING_FRAG_SHADER);
         frag_object.setSourceStrings(source, 1);
         frag_object.compile();
 
@@ -582,8 +459,7 @@ public class HumusFlagDemo extends Frame
         geom.setVertices(QuadArray.COORDINATE_3,coords, 4);
         geom.setTextureCoordinates(tex_type, tex_coords, 1);
 
-        File light_file = DataUtils.lookForFile("images/examples/shader/humus_particle.png", getClass(), null);
-        TextureComponent2D img_comp = loadImage(light_file);
+        TextureComponent2D img_comp = loadTexture("images/examples/shader/humus_particle.png");
         Texture2D tex = new Texture2D(Texture2D.FORMAT_RGBA, img_comp);
         tex.setBoundaryModeS(Texture.BM_CLAMP_TO_EDGE);
         tex.setBoundaryModeT(Texture.BM_CLAMP_TO_EDGE);
@@ -602,95 +478,6 @@ public class HumusFlagDemo extends Frame
         tg.addChild(shape);
 
         return tg;
-    }
-
-    /**
-     * Load a shader source file into an array of strings.
-     *
-     * @param file The name of the file to load
-     * @return the strings that represent the source.
-     */
-    private String[] loadShaderSource(String file)
-    {
-        File f = new File(file);
-        if(!f.exists())
-        {
-            System.out.println("Can't find shader " + file);
-            return null;
-        }
-
-        String str = null;
-
-        try
-        {
-            FileInputStream fis = new FileInputStream(f);
-            byte[] raw_chars = new byte[(int)f.length()];
-            byte[] readbuf = new byte[1024];
-            int bytes_read = 0;
-            int read_offset = 0;
-
-            while((bytes_read = fis.read(readbuf, 0, 1024)) != -1)
-            {
-                System.arraycopy(readbuf, 0, raw_chars, read_offset, bytes_read);
-                read_offset += bytes_read;
-            }
-
-                str = new String(raw_chars);
-        }
-        catch(IOException ioe)
-        {
-            System.out.println("error reading shader file " + ioe.getMessage());
-            return null;
-        }
-
-        return new String[] { str };
-    }
-
-    /**
-     * Load a single image.
-     */
-    private TextureComponent2D loadImage(File f)
-    {
-        TextureComponent2D img_comp = null;
-
-        try
-        {
-            if(!f.exists())
-                System.out.println("Can't find texture source file");
-
-            FileInputStream is = new FileInputStream(f);
-
-            BufferedInputStream stream = new BufferedInputStream(is);
-            BufferedImage img = ImageIO.read(stream);
-
-            int img_width = img.getWidth(null);
-            int img_height = img.getHeight(null);
-            int format = TextureComponent.FORMAT_RGB;
-
-            switch(img.getType())
-            {
-                case BufferedImage.TYPE_3BYTE_BGR:
-                case BufferedImage.TYPE_CUSTOM:
-                case BufferedImage.TYPE_INT_RGB:
-                    break;
-
-                case BufferedImage.TYPE_4BYTE_ABGR:
-                case BufferedImage.TYPE_INT_ARGB:
-                    format = TextureComponent.FORMAT_RGBA;
-                    break;
-            }
-
-            img_comp = new ImageTextureComponent2D(format,
-                                            img_width,
-                                            img_height,
-                                            img);
-        }
-        catch(IOException ioe)
-        {
-            System.out.println("Error reading image: " + ioe);
-        }
-
-        return  img_comp;
     }
 
     public static void main(String[] args)

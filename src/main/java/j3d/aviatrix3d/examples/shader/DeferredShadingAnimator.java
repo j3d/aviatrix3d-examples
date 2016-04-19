@@ -79,7 +79,7 @@ class DeferredShadingAnimator
     /**
      *
      */
-    public DeferredShadingAnimator()
+    DeferredShadingAnimator()
     {
         firstFrameTime = System.currentTimeMillis();
         shaderList = new ArrayList<ShaderHolder>();

@@ -6,6 +6,8 @@ import org.j3d.maths.vector.Matrix4d;
 
 // Application Specific imports
 import org.j3d.aviatrix3d.*;
+
+import org.j3d.renderer.aviatrix3d.pipeline.ViewportResizeManager;
 import org.j3d.util.MatrixUtils;
 
 /**
@@ -29,11 +31,15 @@ public class ModelRotationAnimation
     /** Utility for processing matrix rotations */
     private MatrixUtils matrixUtils;
 
+    private ViewportResizeManager resizeManager;
+
     /**
      *
      */
-    public ModelRotationAnimation(TransformGroup tx)
+    public ModelRotationAnimation(TransformGroup tx, ViewportResizeManager resizer)
     {
+        resizeManager = resizer;
+
         matrix = new Matrix4d();
         matrix.setIdentity();
         transform = tx;
@@ -50,6 +56,7 @@ public class ModelRotationAnimation
      */
     public void updateSceneGraph()
     {
+        resizeManager.sendResizeUpdates();
         transform.boundsChanged(this);
     }
 
