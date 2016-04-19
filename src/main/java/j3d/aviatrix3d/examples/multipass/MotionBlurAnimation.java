@@ -3,6 +3,7 @@ package j3d.aviatrix3d.examples.multipass;
 // External imports
 import org.j3d.maths.vector.Matrix4d;
 import org.j3d.maths.vector.Vector3d;
+import org.j3d.renderer.aviatrix3d.pipeline.ViewportResizeManager;
 
 // Local imports
 import org.j3d.aviatrix3d.*;
@@ -29,11 +30,14 @@ public class MotionBlurAnimation
     /** The scene graph node to update */
     private TransformGroup[] transform;
 
+    private ViewportResizeManager resizeManager;
+
     /**
      *
      */
-    public MotionBlurAnimation(TransformGroup[] tx)
+    public MotionBlurAnimation(TransformGroup[] tx, ViewportResizeManager resizer)
     {
+        resizeManager = resizer;
         translation = new Vector3d();
         transform = tx;
 
@@ -56,8 +60,12 @@ public class MotionBlurAnimation
      */
     public void updateSceneGraph()
     {
+        resizeManager.sendResizeUpdates();
+
         for(int i = 0; i < transform.length; i++)
+        {
             transform[i].boundsChanged(this);
+        }
 
         // Calculate the new position. First shift the positions down one spot
         // and use the last item as the new matrix to fill in.

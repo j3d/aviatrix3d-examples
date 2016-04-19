@@ -21,23 +21,15 @@ import java.util.ArrayList;
 import org.j3d.aviatrix3d.*;
 
 import org.j3d.aviatrix3d.pipeline.graphics.FrustumCullStage;
-import org.j3d.aviatrix3d.output.graphics.SimpleAWTSurface;
-import org.j3d.aviatrix3d.pipeline.graphics.GraphicsCullStage;
-import org.j3d.aviatrix3d.pipeline.graphics.DefaultGraphicsPipeline;
-import org.j3d.aviatrix3d.pipeline.graphics.GraphicsOutputDevice;
 import org.j3d.aviatrix3d.pipeline.graphics.StateAndTransparencyDepthSortStage;
 
-import org.j3d.aviatrix3d.pipeline.graphics.GraphicsSortStage;
-import org.j3d.aviatrix3d.management.SingleThreadRenderManager;
-import org.j3d.aviatrix3d.management.SingleDisplayCollection;
-
+// Local imports
+import j3d.aviatrix3d.examples.basic.BaseDemoFrame;
 import org.j3d.maths.vector.Matrix4d;
 import org.j3d.maths.vector.Vector3d;
 import org.j3d.maths.vector.Vector4d;
 import org.j3d.renderer.aviatrix3d.geom.Box;
-import org.j3d.renderer.aviatrix3d.pipeline.ViewportResizeManager;
 
-// Local imports
 
 /**
  * Main class that creates a hard shadowing scene using shadow volume technique.
@@ -51,18 +43,8 @@ import org.j3d.renderer.aviatrix3d.pipeline.ViewportResizeManager;
  * @author Sang Park
  * @version $Revision: 1.2 $
  */
-public class StencilShadowDemo extends Frame
-							   implements WindowListener {
-	
-    /** Manager for the scene graph handling */
-    private SingleThreadRenderManager sceneManager;
-
-    /** Manager for the layers etc */
-    private SingleDisplayCollection displayManager;
-
-    /** Our drawing surface */
-    private GraphicsOutputDevice surface;
-    
+public class StencilShadowDemo extends BaseDemoFrame
+{
     /** Silhouette edge geometry */
     private SEdgeIndTriArray silhouetteEdgeGeom;
     
@@ -75,71 +57,27 @@ public class StencilShadowDemo extends Frame
     /** Global position of the light */
     private Vector4d lightPos;
 
-	private ViewportResizeManager resizeManager;
-
 	/**
      * Constructor
      */
 	public StencilShadowDemo() {
 		
-        super("Stencil Shadow Demo");
-        
-        setLayout(new BorderLayout());
-        addWindowListener(this);
-
-        setupAviatrix();
-        setupSceneGraph();
-
-        setSize(500, 500);
-        setLocation(40, 40);
-
-        // Need to set visible first before starting the rendering thread due
-        // to a bug in JOGL. See JOGL Issue #54 for more information on this.
-        // http://jogl.dev.java.net
-        setVisible(true);
+        super("Stencil Shadow Demo",
+              new FrustumCullStage(),
+              new StateAndTransparencyDepthSortStage(),
+              false);
 	}
 
-    /**
-     * Setup the avaiatrix pipeline here
-     */
-    private void setupAviatrix()
+    @Override
+    protected GraphicsRenderingCapabilities getCapabilities()
     {
-		resizeManager = new ViewportResizeManager();
-
-        // Assemble a simple single-threaded pipeline.
         GraphicsRenderingCapabilities caps = new GraphicsRenderingCapabilities();
         caps.stencilBits = 8;
 
-        GraphicsCullStage culler = new FrustumCullStage();
-        culler.setOffscreenCheckEnabled(true);
-
-        GraphicsSortStage sorter = new StateAndTransparencyDepthSortStage();
-        surface = new SimpleAWTSurface(caps);
-		surface.addGraphicsResizeListener(resizeManager);
-
-        DefaultGraphicsPipeline pipeline = new DefaultGraphicsPipeline();
-
-        pipeline.setCuller(culler);
-        pipeline.setSorter(sorter);
-        pipeline.setGraphicsOutputDevice(surface);
-
-        displayManager = new SingleDisplayCollection();
-        displayManager.addPipeline(pipeline);
-
-        // Render manager
-        sceneManager = new SingleThreadRenderManager();
-        sceneManager.addDisplay(displayManager);
-        sceneManager.setMinimumFrameInterval(100);
-
-        // Before putting the pipeline into run mode, put the canvas on
-        // screen first.
-        Component comp = (Component)surface.getSurfaceObject();
-        add(comp, BorderLayout.CENTER);
+        return caps;
     }
 
-    /**
-     * Setup the basic scene which consists of a quad and a viewpoint
-     */
+    @Override
     protected void setupSceneGraph()
     {
     	// Set all multipass scenes.
@@ -603,64 +541,6 @@ public class StencilShadowDemo extends Frame
 		renderPass.setRenderedGeometry(scene_root);
     	return renderPass;
     }
-    
-    //---------------------------------------------------------------
-    // Methods defined by WindowListener
-    //---------------------------------------------------------------
-
-    /**
-     * Ignored
-     */
-    public void windowActivated(WindowEvent evt)
-    {
-    }
-
-    /**
-     * Ignored
-     */
-    public void windowClosed(WindowEvent evt)
-    {
-    }
-
-    /**
-     * Exit the application
-     *
-     * @param evt The event that caused this method to be called.
-     */
-    public void windowClosing(WindowEvent evt)
-    {
-        sceneManager.shutdown();
-        System.exit(0);
-    }
-
-    /**
-     * Ignored
-     */
-    public void windowDeactivated(WindowEvent evt)
-    {
-    }
-
-    /**
-     * Ignored
-     */
-    public void windowDeiconified(WindowEvent evt)
-    {
-    }
-
-    /**
-     * Ignored
-     */
-    public void windowIconified(WindowEvent evt)
-    {
-    }
-
-    /**
-     * When the window is opened, start everything up.
-     */
-    public void windowOpened(WindowEvent evt)
-    {
-        sceneManager.setEnabled(true);
-    }
 
     //---------------------------------------------------------------
     // Local methods
@@ -671,5 +551,6 @@ public class StencilShadowDemo extends Frame
 	 */
 	public static void main(String[] args) {
 		StencilShadowDemo shadowDemo = new StencilShadowDemo();
+        shadowDemo.setVisible(true);
 	}
 }
