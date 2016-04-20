@@ -13,9 +13,6 @@
 package j3d.aviatrix3d.examples.shader;
 
 // External imports
-import java.awt.*;
-import java.awt.event.*;
-
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -29,6 +26,7 @@ import org.j3d.maths.vector.Vector3d;
 
 // Local imports
 import org.j3d.aviatrix3d.*;
+import org.j3d.aviatrix3d.pipeline.graphics.StateSortStage;
 
 import j3d.aviatrix3d.examples.basic.BaseDemoFrame;
 import org.j3d.geom.GeometryData;
@@ -37,8 +35,6 @@ import org.j3d.util.DataUtils;
 
 /**
  * Demo that is a port of Humus' cloth falling over spheres code.
- *
- * FIXME
  *
  * The original demo and code can be found here:
  * http://esprit.campus.luth.se/~humus/3D/index.php?page=OpenGL
@@ -75,7 +71,7 @@ public class HumusClothDemo extends BaseDemoFrame
     /** Create a new demo */
     public HumusClothDemo()
     {
-        super("Aviatrix3D Port of Humus Cloth Demo");
+        super("Aviatrix3D Port of Humus Cloth Demo", null, new StateSortStage(), false);
     }
 
     @Override
@@ -188,7 +184,8 @@ public class HumusClothDemo extends BaseDemoFrame
                                    cloth_tx,
                                    light_tx,
                                    sphere_tx_list,
-                                   corner_tx_list);
+                                   corner_tx_list,
+                                   resizeManager);
         sceneManager.setApplicationObserver(anim);
 
         // Then the basic layer and viewport at the top:
@@ -210,7 +207,7 @@ public class HumusClothDemo extends BaseDemoFrame
      * @param viewPos The fixed position of the viewer
      * @param
      */
-    private TransformGroup createSphere(Vector3d viewPos,
+    private TransformGroup  createSphere(Vector3d viewPos,
                                         float radius,
                                         float[] colour)
     {

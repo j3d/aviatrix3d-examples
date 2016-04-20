@@ -23,9 +23,10 @@ import org.j3d.aviatrix3d.*;
 
 import org.j3d.geom.spring.SpringNode;
 import org.j3d.geom.spring.SpringSystem;
+import org.j3d.renderer.aviatrix3d.pipeline.ViewportResizeManager;
 import org.j3d.texture.procedural.PerlinNoiseGenerator;
 
-public class HumusClothAnimator
+class HumusClothAnimator
     implements ApplicationUpdateObserver, NodeUpdateListener
 {
     /** Maximum random number value */
@@ -153,15 +154,16 @@ public class HumusClothAnimator
     /** The number of valid spheres that are currently shown */
     private int numValidSpheres;
 
-    /**
-     *
-     */
-    public HumusClothAnimator(Texture2D[] flags,
-                              TransformGroup cloth,
-                              TransformGroup light,
-                              TransformGroup[] spheres,
-                              TransformGroup[] corners)
+    private ViewportResizeManager resizeManager;
+
+    HumusClothAnimator(Texture2D[] flags,
+                       TransformGroup cloth,
+                       TransformGroup light,
+                       TransformGroup[] spheres,
+                       TransformGroup[] corners,
+                       ViewportResizeManager resizer)
     {
+        resizeManager = resizer;
         sphereTransforms = spheres;
         cornerTransforms = corners;
         flagTextures = flags;
@@ -208,7 +210,9 @@ public class HumusClothAnimator
         }
 
         for(int i = 0; i < CLOTH_SIZE_Y - 1; i++)
+        {
             strip_len[i] = CLOTH_SIZE_X * 2;
+        }
 
         clothGeometry.setVertices(VertexGeometry.COORDINATE_3,
                                   vertices,
@@ -241,7 +245,7 @@ public class HumusClothAnimator
         lightPos = new float[3];
         spherePos = new float[max_spheres][3];
         sphereSize = new float[max_spheres];
-        sphereColor = new float[max_spheres][3];
+        sphereColor = new float[max_spheres][4];
 
         sphereArgs = new ShaderArguments[max_spheres];
         sphereVisibility = new boolean[max_spheres];
@@ -284,6 +288,7 @@ public class HumusClothAnimator
      */
     public void updateSceneGraph()
     {
+        resizeManager.sendResizeUpdates();
 
         long cur_time = System.currentTimeMillis();
         float frame_time = (cur_time - lastFrameTime) / 1000f;
@@ -296,14 +301,14 @@ public class HumusClothAnimator
 
         if(time >= nextTime || ((nextTime - time < 4500) && sum < 5) || sum > 9800)
         {
-            // Change the flag every 10 seconds.
-            nextTime = time + 10000;
+            // Change the flag every 20 seconds.
+            nextTime = time + 20000;
 
             resetClothPoints();
             springSystem.resetNaturalLengths();
 
             // choose how many spheres we want. Between 0 and 3.
-            numValidSpheres = (int)(rgen.nextFloat() * MAX_RAND) & 3;
+            numValidSpheres = (int)(rgen.nextFloat() * MAX_RAND) & sphereTransforms.length;
 
             for(int i = 0; i < numValidSpheres; i++)
             {
@@ -321,6 +326,7 @@ public class HumusClothAnimator
                 sphereColor[i][0] = rgen.nextFloat();
                 sphereColor[i][1] = rgen.nextFloat();
                 sphereColor[i][2] = rgen.nextFloat();
+                sphereColor[i][3] = 1;
             }
 
             // Turn off any remaining spheres.
@@ -561,7 +567,7 @@ public class HumusClothAnimator
                     sphereArgs[i].setUniform("lightPos", 3, lightPos, 1);
                     sphereArgs[i].setUniform("spherePos", 3, spherePos[i], 1);
 
-                    sphereArgs[i].setUniform("color", 3, sphereColor[i], 1);
+                    sphereArgs[i].setUniform("color", 4, sphereColor[i], 1);
 
                     tmpFloat[0] = sphereSize[i] - 1;
                     sphereArgs[i].setUniform("sphereSize", 1, tmpFloat, 1);
