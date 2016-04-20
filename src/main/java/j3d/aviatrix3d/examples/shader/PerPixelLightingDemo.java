@@ -1,17 +1,6 @@
 package j3d.aviatrix3d.examples.shader;
 
 // External imports
-import java.awt.*;
-import java.awt.event.*;
-
-import java.awt.image.BufferedImage;
-import javax.imageio.ImageIO;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.FileInputStream;
-import java.io.BufferedInputStream;
-
 import org.j3d.maths.vector.AxisAngle4d;
 import org.j3d.maths.vector.Matrix4d;
 import org.j3d.maths.vector.Vector3d;
@@ -19,20 +8,12 @@ import org.j3d.maths.vector.Vector3d;
 // Local imports
 import org.j3d.aviatrix3d.*;
 
-import org.j3d.aviatrix3d.output.graphics.SimpleAWTSurface;
-import org.j3d.aviatrix3d.pipeline.graphics.GraphicsCullStage;
-import org.j3d.aviatrix3d.pipeline.graphics.DefaultGraphicsPipeline;
-import org.j3d.aviatrix3d.pipeline.graphics.GraphicsOutputDevice;
-import org.j3d.aviatrix3d.pipeline.graphics.NullCullStage;
+import j3d.aviatrix3d.examples.basic.BaseDemoFrame;
 import org.j3d.aviatrix3d.pipeline.graphics.TransparencyDepthSortStage;
-import org.j3d.aviatrix3d.pipeline.graphics.GraphicsSortStage;
-import org.j3d.aviatrix3d.management.SingleThreadRenderManager;
-import org.j3d.aviatrix3d.management.SingleDisplayCollection;
 
 import org.j3d.geom.GeometryData;
 import org.j3d.geom.BoxGenerator;
 import org.j3d.geom.SphereGenerator;
-import org.j3d.util.DataUtils;
 
 /**
  * Example of per pixel lighting.
@@ -40,8 +21,8 @@ import org.j3d.util.DataUtils;
  * @author Rex Melton
  * @version $Revision: 1.0 $
  */
-public class PerPixelLightingDemo extends Frame
-	implements WindowListener, ApplicationUpdateObserver, NodeUpdateListener
+public class PerPixelLightingDemo extends BaseDemoFrame
+	implements ApplicationUpdateObserver, NodeUpdateListener
 {
 	/** vertex shader */
 	private static final String VTX_SHADER_FILE = 
@@ -67,21 +48,6 @@ public class PerPixelLightingDemo extends Frame
 	private static final int ENABLE_HEADLIGHT = 1;
 	private static final int DISABLE_HEADLIGHT = 0;
 	
-	/** Manager for the scene graph handling */
-	private SingleThreadRenderManager sceneManager;
-	
-	/** Manager for the layers etc */
-	private SingleDisplayCollection displayManager;
-	
-	/** Our drawing surface */
-	private GraphicsOutputDevice surface;
-	
-	/** The shader for vertex section */
-	private VertexShader vtxShader;
-	
-	/** The shader for fragment processing */
-	private FragmentShader fragShader;
-	
 	/** navigation objs */
 	private TransformGroup view_tx;
 	private int station;
@@ -98,44 +64,28 @@ public class PerPixelLightingDemo extends Frame
 	 */
 	public PerPixelLightingDemo()
 	{
-		super("GLSL Phong");
-		
-		setLayout(new BorderLayout());
-		addWindowListener(this);
-		
-		rotation = new AxisAngle4d();
-        rotation.set(0, 1, 0, 0);
-
-		view_mtx = new Matrix4d();
-		translation = new Vector3d();
-		
-		transparency = new float[4];
-		material = new Material[4];
-		
-		setupAviatrix();
-		setupSceneGraph();
-		
-		setLocation(40, 40);
-		
-		// Need to set visible first before starting the rendering thread due
-		// to a bug in JOGL. See JOGL Issue #54 for more information on this.
-		// http://jogl.dev.java.net
-		pack();
-		setVisible(true);
+		super("GLSL Phong", null, new TransparencyDepthSortStage(), false);
 	}
 	
 	//---------------------------------------------------------------
 	// ApplicationUpdateObserver methods
 	//---------------------------------------------------------------
-	
-	public void appShutdown() {
+
+    @Override
+	public void appShutdown()
+	{
 	}
-	
-	public void updateSceneGraph() {
-		
-		if (++station == 360) {
+
+    @Override
+	public void updateSceneGraph()
+    {
+		resizeManager.sendResizeUpdates();
+
+		if (++station == 360)
+        {
 			station = 0;
 		}
+
 		double angle = station * Math.PI / 180;
 		translation.x = (float)(ORBIT_DISTANCE * Math.sin(angle));
 		translation.z = (float)(ORBIT_DISTANCE * Math.cos(angle));
@@ -171,16 +121,23 @@ public class PerPixelLightingDemo extends Frame
 	//---------------------------------------------------------------
 	// NodeUpdateListener methods
 	//---------------------------------------------------------------
-	
-	public void updateNodeBoundsChanges(Object src) {
-		if (src == view_tx) {
+
+    @Override
+	public void updateNodeBoundsChanges(Object src)
+    {
+		if (src == view_tx)
+        {
 			view_tx.setTransform(view_mtx);
 		}
 	}
-	
-	public void updateNodeDataChanges(Object src) {
-		for (int i = 0; i < 4; i++) {
-			if (src == material[i]) {
+
+    @Override
+	public void updateNodeDataChanges(Object src)
+    {
+		for (int i = 0; i < 4; i++)
+        {
+			if (src == material[i])
+            {
 				material[i].setTransparency(transparency[i]);
 			}
 		}
@@ -189,47 +146,19 @@ public class PerPixelLightingDemo extends Frame
 	//---------------------------------------------------------------
 	// X methods
 	//---------------------------------------------------------------
-	
-	/**
-	 * Setup the aviatrix pipeline here
-	 */
-	private void setupAviatrix()
-	{
-		// Assemble a simple single-threaded pipeline.
-        GraphicsRenderingCapabilities caps = new GraphicsRenderingCapabilities();
-		
-		GraphicsCullStage culler = new NullCullStage();
-		culler.setOffscreenCheckEnabled(false);
-		
-		GraphicsSortStage sorter = new TransparencyDepthSortStage();
-		surface = new SimpleAWTSurface(caps);
-		DefaultGraphicsPipeline pipeline = new DefaultGraphicsPipeline();
-		
-		pipeline.setCuller(culler);
-		pipeline.setSorter(sorter);
-		pipeline.setGraphicsOutputDevice(surface);
-		
-		displayManager = new SingleDisplayCollection();
-		displayManager.addPipeline(pipeline);
-		
-		// Render manager
-		sceneManager = new SingleThreadRenderManager();
-		sceneManager.addDisplay(displayManager);
-		//sceneManager.setMinimumFrameInterval(20);
-		sceneManager.setApplicationObserver(this);
-		
-		// Before putting the pipeline into run mode, put the canvas on
-		// screen first.
-		Component comp = (Component)surface.getSurfaceObject();
-		comp.setPreferredSize(new Dimension(500, 500));
-		add(comp, BorderLayout.CENTER);
-	}
-	
-	/**
-	 * Setup the basic scene which consists of a quad and a viewpoint
-	 */
+
+    @Override
 	protected void setupSceneGraph()
 	{
+        rotation = new AxisAngle4d();
+        rotation.set(0, 1, 0, 0);
+
+        view_mtx = new Matrix4d();
+        translation = new Vector3d();
+
+        transparency = new float[4];
+        material = new Material[4];
+
 		Group scene_root = new Group();
 
 		// pointing down the -X axis
@@ -274,9 +203,19 @@ public class PerPixelLightingDemo extends Frame
 			material[i].setShininess(0.8f);
 			
 			int num_textures = 1;
-			TextureUnit[] textures = new TextureUnit[1];
-			textures[0] = loadImage(TEXTURE_FILES[i]);
-			
+            TextureComponent2D[] img_comp = { loadTexture(TEXTURE_FILES[i]) };
+
+            Texture2D texture = new Texture2D();
+            texture.setSources(Texture.MODE_BASE_LEVEL,
+                               Texture.FORMAT_RGBA,
+                               img_comp,
+                               1);
+
+            TextureUnit tu = new TextureUnit();
+            tu.setTexture(texture);
+
+            TextureUnit[] textures = { tu };
+
 			String[] vert_shader_txt = loadShaderFile(VTX_SHADER_FILE);
 			String[] frag_shader_txt = loadShaderFile(FRAG_SHADER_FILE);
 			
@@ -392,185 +331,20 @@ public class PerPixelLightingDemo extends Frame
 		SimpleViewport view = new SimpleViewport();
 		view.setDimensions(0, 0, 500, 500);
 		view.setScene(scene);
-		
-		//ShaderLoadStatusCallback cb =
-		//    new ShaderLoadStatusCallback(vert_shader, frag_shader, shader_prog);
-		//sceneManager.setApplicationObserver(cb);
-		
+        resizeManager.addManagedViewport(view);
+
 		SimpleLayer layer = new SimpleLayer();
 		layer.setViewport(view);
 		
 		Layer[] layers = { layer };
 		displayManager.setLayers(layers, 1);
+
+        sceneManager.setApplicationObserver(this);
 	}
-	
-	//---------------------------------------------------------------
-	// Methods defined by WindowListener
-	//---------------------------------------------------------------
-	
-	/**
-	 * Ignored
-	 */
-	public void windowActivated(WindowEvent evt)
-	{
-	}
-	
-	/**
-	 * Ignored
-	 */
-	public void windowClosed(WindowEvent evt)
-	{
-	}
-	
-	/**
-	 * Exit the application
-	 *
-	 * @param evt The event that caused this method to be called.
-	 */
-	public void windowClosing(WindowEvent evt)
-	{
-		sceneManager.shutdown();
-		System.exit(0);
-	}
-	
-	/**
-	 * Ignored
-	 */
-	public void windowDeactivated(WindowEvent evt)
-	{
-	}
-	
-	/**
-	 * Ignored
-	 */
-	public void windowDeiconified(WindowEvent evt)
-	{
-	}
-	
-	/**
-	 * Ignored
-	 */
-	public void windowIconified(WindowEvent evt)
-	{
-	}
-	
-	/**
-	 * When the window is opened, start everything up.
-	 */
-	public void windowOpened(WindowEvent evt)
-	{
-		sceneManager.setEnabled(true);
-	}
-	
+
 	//---------------------------------------------------------------
 	// Local methods
 	//---------------------------------------------------------------
-	
-	/**
-	 * Load the shader file. Find it relative to the classpath.
-	 *
-	 * @param name THe name of the file to load
-	 */
-	private String[] loadShaderFile(String name)
-	{
-        File file = DataUtils.lookForFile(name, getClass(), null);
-        if(file == null)
-		{
-			System.out.println("Cannot find file " + name);
-			return null;
-		}
-		
-		String ret_val = null;
-		
-		try
-		{
-			FileReader is = new FileReader(file);
-			StringBuffer buf = new StringBuffer();
-			char[] read_buf = new char[1024];
-			int num_read = 0;
-			
-			while((num_read = is.read(read_buf, 0, 1024)) != -1)
-				buf.append(read_buf, 0, num_read);
-			
-			is.close();
-			
-			ret_val = buf.toString();
-		}
-		catch(IOException ioe)
-		{
-			System.out.println("I/O error " + ioe);
-		}
-		return new String[] { ret_val };
-	}
-	
-	//---------------------------------------------------------------
-	// Local methods
-	//---------------------------------------------------------------
-	
-	/**
-	 * Load a single image
-	 */
-	private TextureUnit loadImage(String name)
-	{
-		TextureComponent2D comp = null;
-		
-		try
-		{
-			File file = DataUtils.lookForFile(name, getClass(), null);
-			if(file == null)
-            {
-                System.out.println("Can't find texture source file");
-                return null;
-            }
-			
-			FileInputStream is = new FileInputStream(file);
-			
-			BufferedInputStream stream = new BufferedInputStream(is);
-			BufferedImage img = ImageIO.read(stream);
-			
-			if(img == null)
-				return null;
-			
-			int img_width = img.getWidth(null);
-			int img_height = img.getHeight(null);
-			int format = TextureComponent.FORMAT_RGB;
-			
-			switch(img.getType())
-			{
-			case BufferedImage.TYPE_3BYTE_BGR:
-			case BufferedImage.TYPE_CUSTOM:
-			case BufferedImage.TYPE_INT_RGB:
-				break;
-				
-			case BufferedImage.TYPE_4BYTE_ABGR:
-			case BufferedImage.TYPE_INT_ARGB:
-				format = TextureComponent.FORMAT_RGBA;
-				break;
-			}
-			
-			comp = new ImageTextureComponent2D(format,
-				img_width,
-				img_height,
-				img);
-		}
-		catch(IOException ioe)
-		{
-			System.out.println("Error reading image: " + ioe);
-		}
-		
-		TextureComponent2D[] img_comp = { comp };
-		
-		Texture2D texture = new Texture2D();
-		texture.setSources(Texture.MODE_BASE_LEVEL,
-			Texture.FORMAT_RGBA,
-			img_comp,
-			1);
-		
-		TextureUnit tu = new TextureUnit();
-		tu.setTexture(texture);
-		
-		return tu;
-	}
 	
 	public static void main(String[] args)
 	{
