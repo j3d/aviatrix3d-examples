@@ -17,8 +17,6 @@ import org.j3d.geom.BoxGenerator;
  * Example application that demonstrates how to put together a single-threaded
  * rendering system.
  *
- * FIXME
- *
  * @author Justin Couch
  * @version $Revision: 1.14 $
  */
