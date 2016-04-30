@@ -39,60 +39,60 @@ public class ByteTexture3DDemo extends BaseDemoFrame
     {
         PerlinNoiseGenerator noise_gen = new PerlinNoiseGenerator();
 
-        byte[] tex_buffer = new byte[XSIZE * YSIZE * ZSIZE];
-        int min = 255;
-        int max = 0;
-        int pos = 0;
-
-        for (int z = 0; z < ZSIZE; z++)
-        {
-            for (int y = 0; y < YSIZE; y++)
-            {
-                for (int x = 0; x < XSIZE; x++)
-                {
-                    float noise = noise_gen.tileableTurbulence3(XSCALE * x,
-                                                                YSCALE * y,
-                                                                ZSCALE * z,
-                                                                XSIZE * XSCALE,
-                                                                YSIZE * YSCALE,
-                                                                ZSIZE * ZSCALE,
-                                                                16);
-                    int t = (int) (127.5f * (1 + noise));
-                    if (t > max)
-                        max = t;
-                    if (t < min)
-                        min = t;
-                    tex_buffer[pos++] = (byte) t;
-                }
-            }
-        }
-
-        float min_max = 1.0f / (max - min);
-        for (int i = 0; i < XSIZE * YSIZE * ZSIZE; i++)
-            tex_buffer[i] = (byte) ((255 * (tex_buffer[i] - min)) * min_max);
-
-        ByteTextureComponent3D img_comp =
-                new ByteTextureComponent3D(TextureComponent.FORMAT_SINGLE_COMPONENT,
-                                           XSIZE,
-                                           YSIZE,
-                                           ZSIZE,
-                                           tex_buffer);
-
-/*
+//        byte[] tex_buffer = new byte[XSIZE * YSIZE * ZSIZE];
+//        int min = 255;
+//        int max = 0;
+//        int pos = 0;
+//
+//        for (int z = 0; z < ZSIZE; z++)
+//        {
+//            for (int y = 0; y < YSIZE; y++)
+//            {
+//                for (int x = 0; x < XSIZE; x++)
+//                {
+//                    float noise = noise_gen.tileableTurbulence3(XSCALE * x,
+//                                                                YSCALE * y,
+//                                                                ZSCALE * z,
+//                                                                XSIZE * XSCALE,
+//                                                                YSIZE * YSCALE,
+//                                                                ZSIZE * ZSCALE,
+//                                                                16);
+//                    int t = (int) (127.5f * (1 + noise));
+//                    if (t > max)
+//                        max = t;
+//                    if (t < min)
+//                        min = t;
+//                    tex_buffer[pos++] = (byte) t;
+//                }
+//            }
+//        }
+//
+//        float min_max = 1.0f / (max - min);
+//        for (int i = 0; i < XSIZE * YSIZE * ZSIZE; i++)
+//            tex_buffer[i] = (byte) ((255 * (tex_buffer[i] - min)) * min_max);
+//
+//        ByteTextureComponent3D img_comp =
+//                new ByteTextureComponent3D(TextureComponent.FORMAT_SINGLE_COMPONENT,
+//                                           XSIZE,
+//                                           YSIZE,
+//                                           ZSIZE,
+//                                           tex_buffer);
+//
+//
         // Simpler versions to see the output
         byte[] tex_buffer =
         {
               (byte)0xFF, (byte)0,
               (byte)0,    (byte)0xFF,
               (byte)0,    (byte)0xFF,
-              (byte)0xFF, (byte)0
+              (byte)0xFF, (byte)0,
 
 // 3 Color texture
-//            (byte)0xFF, (byte)0, (byte)0,       (byte)0, (byte)0xFF, (byte)0,
-//            (byte)0,    (byte)0, (byte)0xFF,    (byte)0, (byte)0xFF, (byte)0xFF,
+            (byte)0xFF, (byte)0, (byte)0,       (byte)0, (byte)0xFF, (byte)0,
+            (byte)0,    (byte)0, (byte)0xFF,    (byte)0, (byte)0xFF, (byte)0xFF,
 
-//            (byte)0xFF, (byte)0xFF, (byte)0,    (byte)0xFF, (byte)0, (byte)0xFF,
-//            (byte)0,    (byte)0xFF, (byte)0xFF, (byte)0,    (byte)0, (byte)0
+            (byte)0xFF, (byte)0xFF, (byte)0,    (byte)0xFF, (byte)0, (byte)0xFF,
+            (byte)0,    (byte)0xFF, (byte)0xFF, (byte)0,    (byte)0, (byte)0
         };
 
         ByteTextureComponent3D img_comp =
@@ -102,16 +102,16 @@ public class ByteTexture3DDemo extends BaseDemoFrame
                                        2,
                                        tex_buffer);
 
-//        Texture texture = new Texture3D(Texture.FORMAT_RGB, img_comp);
-*/
+        Texture texture = new Texture3D(Texture.FORMAT_RGB, img_comp);
 
-        Texture texture = new Texture3D(Texture.FORMAT_INTENSITY, img_comp);
+
+//        Texture texture = new Texture3D(Texture.FORMAT_INTENSITY, img_comp);
 
         // View group
         Viewpoint vp = new Viewpoint();
 
         Vector3d trans = new Vector3d();
-        trans.set(0, 0.1d, 1);
+        trans.set(0, 0.25d, 1);
 
         Matrix4d mat = new Matrix4d();
         mat.setIdentity();
