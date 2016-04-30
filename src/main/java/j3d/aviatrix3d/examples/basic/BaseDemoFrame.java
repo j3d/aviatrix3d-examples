@@ -180,8 +180,6 @@ public abstract class BaseDemoFrame extends JFrame
         // Assemble a simple single-threaded pipeline.
         GraphicsRenderingCapabilities caps = getCapabilities();
 
-        culler.setOffscreenCheckEnabled(false);
-
         surface = new DebugAWTSurface(caps);
         surface.setClearColor(0.3f, 0.3f, 0.3f, 1);
         surface.addGraphicsResizeListener(resizeManager);
