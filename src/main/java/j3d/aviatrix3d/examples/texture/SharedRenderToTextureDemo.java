@@ -15,8 +15,6 @@ import j3d.aviatrix3d.examples.basic.BaseDemoFrame;
  * Example application that demonstrates how to put together a single-threaded
  * rendering system.
  *
- * FIXME
- *
  * @author Justin Couch
  * @version $Revision: 1.8 $
  */

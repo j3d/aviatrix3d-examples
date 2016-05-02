@@ -14,8 +14,6 @@ import j3d.aviatrix3d.examples.basic.BaseDemoFrame;
  * Example application that demonstrates how to render to a texture that
  * is then used on the main geometry. RTT is a core of most shader techniques.
  *
- * FIXME
- *
  * @author Justin Couch
  * @version $Revision: 1.11 $
  */
