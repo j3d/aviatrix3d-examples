@@ -11,8 +11,8 @@ import org.j3d.aviatrix3d.pipeline.graphics.*;
 import j3d.aviatrix3d.examples.basic.BaseDemoFrame;
 
 /**
- * Example application that demonstrates how to put together a single-threaded
- * rendering system.
+ * Example application that demonstrates how to render to a texture that
+ * is then used on the main geometry. RTT is a core of most shader techniques.
  *
  * FIXME
  *
@@ -58,10 +58,10 @@ public class SimpleRenderToTextureDemo extends BaseDemoFrame
         };
 
         float[][] tex_coord = {
-                {
-                        0, 0, 1, 0, 0, 1, 1, 0, 1, 1, 0, 1,
-                        0, 0, 1, 0, 0, 1, 1, 0, 1, 1, 0, 1
-                }
+            {
+                0, 0, 1, 0, 0, 1, 1, 0, 1, 1, 0, 1,
+                0, 0, 1, 0, 0, 1, 1, 0, 1, 1, 0, 1
+            }
         };
         int[] tex_type = {VertexGeometry.TEXTURE_COORDINATE_2};
 
