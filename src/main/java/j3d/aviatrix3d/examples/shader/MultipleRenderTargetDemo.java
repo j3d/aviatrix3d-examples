@@ -20,10 +20,7 @@ import org.j3d.geom.SphereGenerator;
  * pieces of geometry, with different colours.
  * <p>
  *
- * FIXME
- *
  * @author Justin Couch
- * @version $Revision: 1.3 $
  */
 public class MultipleRenderTargetDemo extends BaseDemoFrame
 {
@@ -41,12 +38,6 @@ public class MultipleRenderTargetDemo extends BaseDemoFrame
     /** Width and height of the offscreen texture, in pixels */
     private static final int TEXTURE_SIZE = 256;
 
-    /** Width and height of the main window, in pixels */
-    private static final int WINDOW_SIZE = 512;
-
-    /** PI / 4 for rotations */
-    private static final float PI_4 = (float)(Math.PI * 0.25f);
-
     /**
      * Construct a new shader demo instance.
      */
@@ -55,7 +46,7 @@ public class MultipleRenderTargetDemo extends BaseDemoFrame
         super("Multiple Render Target Demo",
               new FrustumCullStage(),
               new StateAndTransparencyDepthSortStage(),
-              true);
+              false);
 
         I18nManager intl_mgr = I18nManager.getManager();
         intl_mgr.setApplication(APP_NAME, "config.i18n.org-j3d-aviatrix3d-resources-core");
@@ -64,8 +55,20 @@ public class MultipleRenderTargetDemo extends BaseDemoFrame
     @Override
     protected void setupSceneGraph()
     {
-        // two quads to draw to
-        float[] quad_coords = { -1, -1, 0, 1, -1, 0, 1, 1, 0, -1, 1, 0 };
+        Viewpoint vp = new Viewpoint();
+
+        Vector3d trans = new Vector3d();
+        trans.set(0, 0, 10);
+
+        Matrix4d view_mat = new Matrix4d();
+        view_mat.set(trans);
+
+        TransformGroup tx = new TransformGroup();
+        tx.setTransform(view_mat);
+        tx.addChild(vp);
+
+        // A quad to draw to
+        float[] quad_coords = { -0.5f, -0.5f, -1, 0.5f, -0.5f, -1, 0.5f, 0.5f, -1, -0.5f, 0.5f, -1 };
         float[] quad_normals = { 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1 };
         float[][] tex_coord = { { 0, 0,  1, 0,  1, 1,  0, 1 } };
 
@@ -78,7 +81,6 @@ public class MultipleRenderTargetDemo extends BaseDemoFrame
         real_geom.setTextureCoordinates(tex_type, tex_coord, 1);
 
         MRTOffscreenTexture2D off_tex = createRenderTargetTexture();
-//        OffscreenTexture2D off_tex = createRenderTargetTexture();
 
         TextureUnit[] tex_unit = { new TextureUnit() };
         tex_unit[0].setTexture(off_tex);
@@ -94,8 +96,8 @@ public class MultipleRenderTargetDemo extends BaseDemoFrame
         shape_1.setGeometry(real_geom);
         shape_1.setAppearance(app_1);
 
-        Vector3d trans = new Vector3d();
-        trans.set(-1.5f, 0, 0);
+        trans = new Vector3d();
+        trans.set(-0.65, 0, 0);
 
         Matrix4d mat_1 = new Matrix4d();
         mat_1.set(trans);
@@ -119,7 +121,7 @@ public class MultipleRenderTargetDemo extends BaseDemoFrame
         shape_2.setAppearance(app_2);
 
         trans = new Vector3d();
-        trans.set(1.5f, 0, 0);
+        trans.set(0.65, 0, 0);
 
         Matrix4d mat_2 = new Matrix4d();
         mat_2.set(trans);
@@ -128,33 +130,21 @@ public class MultipleRenderTargetDemo extends BaseDemoFrame
         tg_2.setTransform(mat_2);
         tg_2.addChild(shape_2);
 
-
-        Viewpoint vp = new Viewpoint();
-
-        trans = new Vector3d();
-        trans.set(0, 0, 10);
-
-        Matrix4d view_mat = new Matrix4d();
-        view_mat.set(trans);
-
-        TransformGroup tx = new TransformGroup();
-        tx.setTransform(view_mat);
-        tx.addChild(vp);
-
-        Group root_grp = new Group();
-        root_grp.addChild(tx);
-        root_grp.addChild(tg_1);
-        root_grp.addChild(tg_2);
+        Group scene_root = new Group();
+        scene_root.addChild(tx);
+        scene_root.addChild(tg_1);
+        scene_root.addChild(tg_2);
 
 
         SimpleScene scene = new SimpleScene();
-        scene.setRenderedGeometry(root_grp);
+        scene.setRenderedGeometry(scene_root);
         scene.setActiveView(vp);
 
         // Then the basic layer and viewport at the top:
         SimpleViewport view = new SimpleViewport();
-        view.setDimensions(0, 0, WINDOW_SIZE, WINDOW_SIZE);
+        view.setDimensions(0, 0, 500, 500);
         view.setScene(scene);
+
         resizeManager.addManagedViewport(view);
 
         SimpleLayer layer = new SimpleLayer();
@@ -162,7 +152,6 @@ public class MultipleRenderTargetDemo extends BaseDemoFrame
 
         Layer[] layers = { layer };
         displayManager.setLayers(layers, 1);
-
     }
 
     /**
@@ -214,8 +203,6 @@ public class MultipleRenderTargetDemo extends BaseDemoFrame
         shader_prog.requestInfoLog();
         shader_prog.link();
 
-        ShaderArguments shader_args = new ShaderArguments();
-
         GLSLangShader shader = new GLSLangShader();
         shader.setShaderProgram(shader_prog);
 
@@ -255,9 +242,7 @@ public class MultipleRenderTargetDemo extends BaseDemoFrame
         MRTOffscreenTexture2D off_tex =
             new MRTOffscreenTexture2D(caps, TEXTURE_SIZE, TEXTURE_SIZE, 2);
 
-//        OffscreenTexture2D off_tex =
-//            new OffscreenTexture2D(caps, TEXTURE_SIZE, TEXTURE_SIZE);
-        off_tex.setClearColor(0.5f, 0.5f, 0.5f, 1);
+        off_tex.setClearColor(0.25f, 0.5f, 0.75f, 1);
         off_tex.setRepaintRequired(true);
         off_tex.setLayers(layers, 1);
 

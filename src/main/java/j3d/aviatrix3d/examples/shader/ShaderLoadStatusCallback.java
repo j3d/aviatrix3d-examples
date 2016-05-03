@@ -14,7 +14,7 @@ import org.j3d.aviatrix3d.*;
  * @author Justin Couch
  * @version $Revision: 1.1 $
  */
-public class ShaderLoadStatusCallback
+class ShaderLoadStatusCallback
     implements ApplicationUpdateObserver
 {
     /** Vert shader to print the results from */
@@ -34,10 +34,10 @@ public class ShaderLoadStatusCallback
     /**
      *
      */
-    public ShaderLoadStatusCallback(ShaderObject vert,
-                                    ShaderObject frag,
-                                    ShaderProgram comp,
-                                    ViewportResizeManager resizer)
+    ShaderLoadStatusCallback(ShaderObject vert,
+                             ShaderObject frag,
+                             ShaderProgram comp,
+                             ViewportResizeManager resizer)
     {
         resizeManager = resizer;
         vertShader = vert;
@@ -55,14 +55,14 @@ public class ShaderLoadStatusCallback
     public void updateSceneGraph()
     {
         resizeManager.sendResizeUpdates();
-        if(frameCount == 4)
+        if(frameCount == 20)
         {
             System.out.println("vert log " + vertShader.getLastInfoLog());
             System.out.println("frag log " + fragShader.getLastInfoLog());
             System.out.println("link log " + completeShader.getLastInfoLog());
             frameCount++;
         }
-        else if(frameCount < 4)
+        else if(frameCount < 20)
             frameCount++;
     }
 
