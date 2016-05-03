@@ -30,6 +30,7 @@ import javax.swing.JFrame;
 
 import org.j3d.maths.vector.*;
 
+import org.j3d.renderer.aviatrix3d.pipeline.ViewportResizeManager;
 import org.j3d.util.*;
 
 import org.j3d.aviatrix3d.*;
@@ -211,6 +212,8 @@ public class ShadowMappingDemo extends JFrame
     /** Our drawing surface */
     private GraphicsOutputDevice surface;
 
+    private ViewportResizeManager resizeManager;
+
     /**
      * Constructor
      */
@@ -246,6 +249,8 @@ public class ShadowMappingDemo extends JFrame
      */
     protected Component setupAviatrix()
     {
+        resizeManager = new ViewportResizeManager();
+
         // Assemble a simple single-threaded pipeline.
         GraphicsRenderingCapabilities caps = new GraphicsRenderingCapabilities();
         caps.depthBits = 24;
@@ -255,6 +260,7 @@ public class ShadowMappingDemo extends JFrame
 
         GraphicsSortStage sorter = new StateAndTransparencyDepthSortStage();
         surface = new SimpleAWTSurface(caps);
+        surface.addGraphicsResizeListener(resizeManager);
 
         DefaultGraphicsPipeline pipeline = new DefaultGraphicsPipeline();
         pipeline.setCuller(culler);
@@ -267,7 +273,7 @@ public class ShadowMappingDemo extends JFrame
         // Render manager
         sceneManager = new SingleThreadRenderManager();
         sceneManager.addDisplay(displayManager);
-        sceneManager.setMinimumFrameInterval(0);
+        sceneManager.setMinimumFrameInterval(100);
 
         // Before putting the pipeline into run mode, put the canvas on
         // screen first.
@@ -277,26 +283,16 @@ public class ShadowMappingDemo extends JFrame
     }
 
     /**
-     * Setups the editor panel
-     *
-     * @return JPanel containing GUI objects.
-     */
-    protected JPanel setupEditorGUI()
-    {
-        return null;
-    }
-
-    /**
      * Setup the basic scene which consists of a quad and a viewpoint
      */
     protected void setupSceneGraph()
     {
-
         setupViewSettings();
 
         SimpleViewport viewport = new SimpleViewport();
         viewport.setDimensions(0, 0, 640, 480);
         viewport.setScene(setupFinalPassScene());
+        resizeManager.addManagedViewport(viewport);
 
         SimpleLayer layer = new SimpleLayer();
         layer.setViewport(viewport);
@@ -312,7 +308,7 @@ public class ShadowMappingDemo extends JFrame
     private void setupViewSettings()
     {
         lightPos = new Point3d();
-        lightPos.set(0.0, 5.45, 4.0);
+        lightPos.set(0.0, 5.45, -4.0);
         lightLookAt = new Point3d();
         lightLookAt.set(0, 0, 0);
         globalUpVec = new Vector3d();
@@ -357,7 +353,7 @@ public class ShadowMappingDemo extends JFrame
         matrixUtil.inverse(spotlightTransform, spotlightTransform);
 
         cameraPosition = new Point3d();
-        cameraPosition.set(1, 7.5f, 11.5f);
+        cameraPosition.set(1, 7.5f, -11.5f);
 
         matrixUtil = new MatrixUtils();
 
@@ -407,7 +403,8 @@ public class ShadowMappingDemo extends JFrame
         lightGroup.addChild(lightCone);
 
         ShadowMappingAnimator shadowAnim =
-                new ShadowMappingAnimator(lightPointofView,
+                new ShadowMappingAnimator(resizeManager,
+                                          lightPointofView,
                                           camerasPointofView,
                                           lightViewSpotLight,
                                           cameraViewSpotLight,
@@ -436,7 +433,6 @@ public class ShadowMappingDemo extends JFrame
      */
     private SimpleScene setupFirstPassScene()
     {
-
         SimpleScene pass = new SimpleScene();
 
         // Grab projection matrix from the current view environment.

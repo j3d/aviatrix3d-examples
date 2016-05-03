@@ -19,6 +19,8 @@ import org.j3d.maths.vector.Vector3d;
 import org.j3d.maths.vector.Point3d;
 
 import org.j3d.aviatrix3d.*;
+
+import org.j3d.renderer.aviatrix3d.pipeline.ViewportResizeManager;
 import org.j3d.util.MatrixUtils;
 
 // Internal imports
@@ -139,10 +141,13 @@ public class ShadowMappingAnimator
     private float[] qRow = new float[4];
     private float[] rRow = new float[4];
 
+    private ViewportResizeManager resizeManager;
+
     /**
      * Constructor
      */
-    public ShadowMappingAnimator(TransformGroup torusLightPointofView,
+    public ShadowMappingAnimator(ViewportResizeManager resizer,
+                                 TransformGroup torusLightPointofView,
                                  TransformGroup torusCamerasView,
                                  SpotLight lPovSpotLight,
                                  SpotLight cameraSpotLight,
@@ -154,6 +159,7 @@ public class ShadowMappingAnimator
                                  Matrix4d lightProjWithBias,
                                  TexCoordGeneration coordGenerator)
     {
+        resizeManager = resizer;
         matrixUtils = new MatrixUtils();
 
         lightMat = new Matrix4d();
@@ -196,7 +202,7 @@ public class ShadowMappingAnimator
      */
     public void updateSceneGraph()
     {
-
+        resizeManager.sendResizeUpdates();
         rotation += ROTATION_INC;
 
         matrixUtils.rotateZ(rotation, matrix);
